@@ -368,4 +368,50 @@ document.addEventListener("DOMContentLoaded", function () {
 
   loadState();
   loadFilterSettings();
+
+  function sendToActiveTab(msg) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, msg);
+    });
+  }
+
+  document.getElementById("testEmailBtn").addEventListener("click", function () {
+    sendToActiveTab({
+      type: "SHOW_EMAIL_ALERT",
+      from: "Professor Smith <smith@ucsc.edu>",
+      subject: "RE: Office Hours Tomorrow",
+      preview: "Hi! Yes office hours are confirmed for 3pm...",
+      draft: "Hi Professor Smith, thank you for confirming! I will see you at 3pm tomorrow.",
+      emailId: "test-123",
+      threadId: "thread-123"
+    });
+  });
+
+  document.getElementById("testConflictBtn").addEventListener("click", function () {
+    sendToActiveTab({
+      type: "SHOW_CONFLICT_ALERT",
+      event1: {
+        summary: "CS101 Discussion Section",
+        start: new Date(Date.now() + 3600000).toISOString(),
+        end: new Date(Date.now() + 7200000).toISOString()
+      },
+      event2: {
+        summary: "Study Group with Maria",
+        start: new Date(Date.now() + 5400000).toISOString(),
+        end: new Date(Date.now() + 9000000).toISOString()
+      },
+      attendees: ["maria@ucsc.edu"]
+    });
+  });
+
+  document.getElementById("testReminderBtn").addEventListener("click", function () {
+    sendToActiveTab({
+      type: "SHOW_REMINDER",
+      event: {
+        summary: "CS146 Lecture",
+        start: new Date(Date.now() + 900000).toISOString(),
+        meetLink: "https://meet.google.com/abc-defg-hij"
+      }
+    });
+  });
 });

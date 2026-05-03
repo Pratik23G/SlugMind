@@ -459,3 +459,36 @@ body.focus-active .focus-banner {
 .session-modal .btn-primary {
   min-width: 100px;
 }
+
+.dev-tools-section {
+  border-top: 1px dashed #2a2a3a;
+}
+
+.dev-tools-label {
+  color: #444 !important;
+  font-size: 10px !important;
+  letter-spacing: 1px;
+}
+
+.dev-tools-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dev-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: #2a2a3a;
+  color: #888;
+  border: 1px solid #444;
+  border-radius: 4px;
+  margin: 2px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dev-btn:hover {
+  background: #333348;
+  color: #aaa;
+}

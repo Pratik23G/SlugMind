@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SlugMind — Ambient Student Co-pilot
 > A Chrome extension that lives quietly in your browser and handles email drafts, calendar conflicts, smart reminders, focus timers, and to-do tracking — without ever breaking your flow.
 
@@ -391,3 +392,7 @@ vercel deploy --prod
 ---
 
 *Built for CruzHacks 2026 — Go Slugs! 🐌*
+=======
+# SlugMind
+An agent that lives in your device letting you deal with minute redundant daily tasks allowing you to scale your productivity.
+>>>>>>> ad4e6bb557ce94082f2e76fe0acfe6f88124f69a
