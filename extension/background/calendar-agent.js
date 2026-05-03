@@ -1,5 +1,3 @@
-import { logAction } from './service-worker.js';
-
 async function sendToActiveTab(msg) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab?.id) chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
@@ -54,8 +52,10 @@ export async function checkUpcomingEvents() {
 }
 
 export async function checkCalendar() {
+  console.log('[SlugMind] checking calendar...');
   const token = await new Promise(res => chrome.identity.getAuthToken({ interactive: false }, res));
   if (!token) return;
+  console.log('[SlugMind] calendar auth token ok');
 
   const now = new Date();
   const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -74,6 +74,7 @@ export async function checkCalendar() {
 
   const eventsData = await eventsRes.json();
   const rawEvents = eventsData.items || [];
+  console.log('[SlugMind] calendar events:', rawEvents.length);
 
   const events = rawEvents
     .filter(e => e.start && (e.start.dateTime || e.start.date))
@@ -154,6 +155,7 @@ export async function checkCalendar() {
       timestamp: Date.now()
     };
 
+    console.log('[SlugMind] CONFLICT FOUND:', conflict.eventA.title, 'vs', conflict.eventB.title);
     pendingConflicts.push(newConflict);
     newConflictIds.push(conflictKey);
 
@@ -165,12 +167,6 @@ export async function checkCalendar() {
       conflictType: conflict.type,
       alternatives,
     });
-
-    await logAction(
-      'calendar',
-      'Conflict: ' + conflict.eventA.title + ' vs ' + conflict.eventB.title,
-      'flagged'
-    );
 
     try {
       await fetch(`${dashboardUrl}/api/activity`, {
