@@ -1,0 +1,15 @@
+[
+  {
+    "id": "9c00a482-9fe4-4f4a-97d3-a1a87051a15c",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777838980780
+  },
+  {
+    "id": "0d0054d5-7e5d-4211-b15f-9328010bb28b",
+    "type": "focus_ended",
+    "duration": 26,
+    "actionsCount": 0,
+    "timestamp": 1777840511516
+  }
+]
