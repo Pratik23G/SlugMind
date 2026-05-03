@@ -1,5 +1,3 @@
-import { logAction } from './service-worker.js';
-
 const SKIP_LABELS = ['CATEGORY_PROMOTIONS', 'CATEGORY_UPDATES', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'];
 
 const SPAM_SENDER_PATTERNS = [
@@ -15,21 +13,27 @@ const SPAM_SUBJECT_PATTERNS = [
 ];
 
 async function sendToActiveTab(msg) {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const validTab = tabs.find(t =>
-    t.url &&
-    !t.url.startsWith('chrome://') &&
-    !t.url.startsWith('chrome-extension://') &&
-    !t.url.startsWith('about:')
-  );
-  if (!validTab) { console.log('[SlugMind] no valid tab found'); return; }
-  console.log('[SlugMind] sending alert to tab:', validTab.id, validTab.url);
-  try {
-    const response = await chrome.tabs.sendMessage(validTab.id, msg);
-    console.log('[SlugMind] tab response:', response);
-  } catch (err) {
-    console.log('[SlugMind] tab error:', err.message);
+  const allTabs = await chrome.tabs.query({});
+  // Prefer active http tabs that aren't Gmail (Gmail can be noisy), fall back to any http tab
+  const httpTabs = allTabs.filter(t => t.url && t.url.startsWith('http'));
+  const preferred = httpTabs.filter(t => !t.url.includes('mail.google.com'));
+  const ordered = [
+    ...preferred.filter(t => t.active),
+    ...preferred.filter(t => !t.active),
+    ...httpTabs.filter(t => t.url.includes('mail.google.com')),
+  ];
+
+  for (const tab of ordered) {
+    try {
+      console.log('[SlugMind] trying tab:', tab.id, tab.url);
+      const response = await chrome.tabs.sendMessage(tab.id, msg);
+      console.log('[SlugMind] panel reached on tab:', tab.id, response);
+      return;
+    } catch (err) {
+      console.log('[SlugMind] tab', tab.id, 'no content script:', err.message);
+    }
   }
+  console.log('[SlugMind] no tab has ambient-panel.js loaded — open any webpage');
 }
 
 async function postActivity(dashboardUrl, payload) {
@@ -56,13 +60,13 @@ function isRealPerson(from) {
 }
 
 function shouldShowAlert(labelIds, from, subject) {
-  if (!labelIds.includes('INBOX'))  { console.log('[SlugMind] filtered: no INBOX label');  return false; }
-  if (!labelIds.includes('UNREAD')) { console.log('[SlugMind] filtered: no UNREAD label'); return false; }
-  const skipLabels = ['CATEGORY_UPDATES', 'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'];
-  if (skipLabels.some(l => labelIds.includes(l))) {
-    console.log('[SlugMind] skipping - category label:', labelIds);
+  // Category check FIRST — hard reject before anything else
+  if (SKIP_LABELS.some(l => labelIds.includes(l))) {
+    console.log('[SlugMind] filtered: category label hit:', labelIds.filter(l => SKIP_LABELS.includes(l)));
     return false;
   }
+  if (!labelIds.includes('INBOX'))  { console.log('[SlugMind] filtered: no INBOX label');  return false; }
+  if (!labelIds.includes('UNREAD')) { console.log('[SlugMind] filtered: no UNREAD label'); return false; }
   const lowerFrom = from.toLowerCase();
   if (SPAM_SENDER_PATTERNS.some(p => lowerFrom.includes(p))) {
     console.log('[SlugMind] filtered: spam sender pattern');
@@ -167,7 +171,6 @@ export async function checkEmails() {
       to:        fromHeader,
     });
 
-    await logAction('email', `New email from: ${fromHeader} — ${subject}`, 'alerted');
     await postActivity(dashboardUrl, {
       type: 'email_drafted',
       subject,
@@ -217,7 +220,6 @@ export async function sendDraft({ emailId, messageId, threadId, to, subject, bod
   } catch {}
 
   const { dashboardUrl = 'http://localhost:3000' } = await chrome.storage.sync.get('dashboardUrl');
-  await logAction('email', 'Sent reply to: ' + subject, 'sent');
   await postActivity(dashboardUrl, { type: 'email_sent', subject, to });
   return true;
 }

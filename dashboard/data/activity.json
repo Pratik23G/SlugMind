@@ -136,5 +136,20 @@
     "from": "GDG Event Platform <noreply@gdg.community.dev>",
     "preview": "Hi Pratik,Don’t miss out on our upcoming event: Wednesday Build Hour: Build and Deploy to Google Clo",
     "timestamp": 1777846528575
+  },
+  {
+    "id": "a2d7a01f-ad60-462b-a86c-c24614ecf1c5",
+    "type": "email_drafted",
+    "subject": "AGENT READ IT!!!",
+    "from": "Pratik <pgc67990@gmail.com>",
+    "preview": "Hi Pratik SlugMind should test and read this email and reply me back please Thanks. Best Regards, Pr",
+    "timestamp": 1777850667891
+  },
+  {
+    "id": "7cb511a3-909c-4117-8a19-2716d4989749",
+    "type": "email_sent",
+    "subject": "AGENT READ IT!!!",
+    "to": "Pratik <pgc67990@gmail.com>",
+    "timestamp": 1777850759097
   }
 ]

@@ -368,4 +368,61 @@ document.addEventListener("DOMContentLoaded", function () {
 
   loadState();
   loadFilterSettings();
+
+  function sendToActiveTab(msg) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, msg);
+    });
+  }
+
+  document.getElementById("testEmailBtn").addEventListener("click", function () {
+    sendToActiveTab({
+      type: "SHOW_EMAIL_ALERT",
+      emailId: "demo-001",
+      messageId: "<demo-001@ucsc.edu>",
+      threadId: "demo-thread-001",
+      from: "Professor Smith <smith@ucsc.edu>",
+      subject: "RE: Office Hours Tomorrow",
+      preview: "Hi! Yes, office hours are confirmed for 3pm in E2 room 506. See you then!",
+      draft: "Hi Professor Smith,\n\nThank you for confirming! I'll see you at 3pm tomorrow in E2-506.\n\nBest,\nPratik",
+      to: "Professor Smith <smith@ucsc.edu>"
+    });
+  });
+
+  document.getElementById("testConflictBtn").addEventListener("click", function () {
+    sendToActiveTab({
+      type: "SHOW_CONFLICT_ALERT",
+      conflictId: "demo-conflict-001",
+      conflictType: "hard",
+      event1: {
+        id: "evt1", title: "CS101 Discussion Section",
+        start: new Date(Date.now() + 3600000).toISOString(),
+        end:   new Date(Date.now() + 7200000).toISOString()
+      },
+      event2: {
+        id: "evt2", title: "Study Group with Maria",
+        start: new Date(Date.now() + 5400000).toISOString(),
+        end:   new Date(Date.now() + 9000000).toISOString()
+      },
+      alternatives: [
+        { label: "Today 6:00 PM", date: new Date().toISOString().slice(0,10), time: "18:00" },
+        { label: "Tomorrow 10:00 AM", date: new Date(Date.now()+86400000).toISOString().slice(0,10), time: "10:00" },
+        { label: "Tomorrow 4:00 PM", date: new Date(Date.now()+86400000).toISOString().slice(0,10), time: "16:00" }
+      ],
+      attendees: ["maria@ucsc.edu"]
+    });
+  });
+
+  document.getElementById("testReminderBtn").addEventListener("click", function () {
+    sendToActiveTab({
+      type: "SHOW_REMINDER",
+      event: {
+        id: "evt-reminder-001",
+        title: "CS146 Lecture",
+        summary: "CS146 Lecture",
+        start: new Date(Date.now() + 900000).toISOString(),
+        meetLink: "https://meet.google.com/abc-defg-hij"
+      }
+    });
+  });
 });
