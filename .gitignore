@@ -1,0 +1,36 @@
+# Environment variables - NEVER commit these
+.env.local
+.env.local.example
+.env
+.env.*
+
+# Dependencies
+node_modules/
+dashboard/node_modules/
+
+# Next.js build output
+dashboard/.next/
+dashboard/out/
+
+# Vercel
+.vercel/
+
+# Chrome extension - don't commit the Desktop copy
+/mnt/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# API keys backup files
+*.key
+*.secret
+secrets/
+
+# Local Ollama data
+ollama/

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../icons/phosphor/style.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <i class="ph ph-spiral logo"></i>
+      <span class="name">SlugMind</span>
+    </div>
+    <div id="statusDot" class="status-dot green"></div>
+  </div>
+
+  <!-- Focus Mode Banner (hidden by default) -->
+  <div id="focusBanner" class="focus-banner hidden">
+    <i class="ph ph-brain focus-icon"></i>
+    <span id="focusCountdown">Focus mode active</span>
+    <button id="stopFocusBtn" class="btn-small danger">Stop</button>
+  </div>
+
+  <!-- Focus Timer Section -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title"><i class="ph ph-timer"></i> Focus Timer</span>
+    </div>
+    <div class="timer-presets">
+      <button class="preset-btn" data-minutes="25">25m</button>
+      <button class="preset-btn" data-minutes="45">45m</button>
+      <button class="preset-btn custom-btn" data-minutes="0">Custom</button>
+    </div>
+    <div id="customInput" class="custom-input hidden">
+      <input type="number" id="customMinutes" min="1" max="120" placeholder="minutes" />
+    </div>
+    <button id="startFocusBtn" class="btn-primary full-width">Start Focus</button>
+  </section>
+
+  <!-- To-Do List Section -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title"><i class="ph ph-check-square"></i> Tasks</span>
+    </div>
+    <div class="task-input-row">
+      <input type="text" id="taskInput" placeholder="Add a task..." />
+      <select id="taskBucket">
+        <option value="today">Today</option>
+        <option value="needs_attention">Needs Attention</option>
+        <option value="tomorrow">Tomorrow</option>
+      </select>
+      <button id="addTaskBtn" class="btn-icon"><i class="ph ph-plus-circle"></i></button>
+    </div>
+    <div class="bucket" id="bucket-today">
+      <div class="bucket-header" data-bucket="today"><i class="ph ph-check-circle"></i> Today <span class="bucket-count" id="count-today">0</span></div>
+      <div class="bucket-items" id="items-today"></div>
+    </div>
+    <div class="bucket" id="bucket-needs_attention">
+      <div class="bucket-header" data-bucket="needs_attention"><i class="ph ph-warning-circle"></i> Needs Attention <span class="bucket-count" id="count-needs_attention">0</span></div>
+      <div class="bucket-items" id="items-needs_attention"></div>
+    </div>
+    <div class="bucket" id="bucket-tomorrow">
+      <div class="bucket-header" data-bucket="tomorrow"><i class="ph ph-arrow-circle-right"></i> Tomorrow <span class="bucket-count" id="count-tomorrow">0</span></div>
+      <div class="bucket-items" id="items-tomorrow"></div>
+    </div>
+  </section>
+
+  <!-- Email Filter Settings -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title"><i class="ph ph-funnel"></i> Email Filters</span>
+    </div>
+    <label class="toggle-row">
+      <input type="checkbox" id="onlyKnownSenders" checked>
+      <span>Only reply to people I know</span>
+    </label>
+    <label class="toggle-row">
+      <input type="checkbox" id="includeUCSC" checked>
+      <span>Auto-include @ucsc.edu senders</span>
+    </label>
+  </section>
+
+  <!-- Recent Actions -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title"><i class="ph ph-list-bullets"></i> Recent</span>
+    </div>
+    <div id="recentActions" class="recent-list"></div>
+  </section>
+
+  <!-- Dev Tools -->
+  <section class="section dev-tools-section">
+    <div class="section-header">
+      <span class="section-title dev-tools-label">DEV TOOLS</span>
+    </div>
+    <div class="dev-tools-row">
+      <button class="dev-btn" id="testEmailBtn">Test Email Alert</button>
+      <button class="dev-btn" id="testConflictBtn">Test Conflict Alert</button>
+      <button class="dev-btn" id="testReminderBtn">Test Reminder</button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <button id="openDashboardBtn" class="btn-link"><i class="ph ph-house"></i> Dashboard</button>
+    <button id="authBtn" class="btn-link"><i class="ph ph-gear"></i> Connect Google</button>
+  </footer>
+  <script src="popup.js"></script>
+</body>
+</html>
