@@ -11,5 +11,130 @@
     "duration": 26,
     "actionsCount": 0,
     "timestamp": 1777840511516
+  },
+  {
+    "id": "66e0350c-9aad-4446-bf2f-b4a2d2d8774b",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777842468799
+  },
+  {
+    "id": "a30b475f-b3ef-4574-a9c3-12f722b93ffd",
+    "type": "focus_ended",
+    "duration": 0,
+    "actionsCount": 0,
+    "timestamp": 1777842496115
+  },
+  {
+    "id": "1afec739-21bc-40f8-ba14-03201d7d8f33",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777843978263
+  },
+  {
+    "id": "4cbdbdcc-2c38-4ac3-8c57-b08b1e197b5f",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777844035745
+  },
+  {
+    "id": "b700004c-d347-4f7e-9fd2-cb896fa1d1b2",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777844710651
+  },
+  {
+    "id": "5df16e1b-4074-4397-b285-c641a04de581",
+    "type": "focus_ended",
+    "duration": 4,
+    "actionsCount": 0,
+    "timestamp": 1777844947774
+  },
+  {
+    "id": "b40e4dba-6686-4c5a-9f40-28cfee3b3430",
+    "type": "email_drafted",
+    "subject": "Your Cloud roundup is here, Pratik",
+    "from": "The Educative Team <support@educative.io>",
+    "preview": "Master the DVA-C02 exam — plus this week's deep dive on AWS WAF security. Your Cloud roundup is here",
+    "timestamp": 1777845961126
+  },
+  {
+    "id": "a5ca0c3c-2b49-4678-bf33-8759c7fd1293",
+    "type": "email_drafted",
+    "subject": "Your Cloud roundup is here, Pratik",
+    "from": "The Educative Team <support@educative.io>",
+    "preview": "Master the DVA-C02 exam — plus this week's deep dive on AWS WAF security. Your Cloud roundup is here",
+    "timestamp": 1777846048216
+  },
+  {
+    "id": "d176ae71-ffb4-4b4e-b318-e66e5bbdf1b7",
+    "type": "email_sent",
+    "subject": "Your Cloud roundup is here, Pratik",
+    "to": "pgurung3@ucsc.edu",
+    "timestamp": 1777846059961
+  },
+  {
+    "id": "1b055817-1ee9-4e23-a716-1d45ea8d046e",
+    "type": "email_drafted",
+    "subject": "Devpost Submission",
+    "from": "Heli <usr-Gt4HtEFhi8wFGLF@user.luma-mail.com>",
+    "preview": "https://luma.com/3j9pgscq?pk=g-kC3imgyvVdJKKJ6 Zero to Agent: Santa Cruz (CruzHacks × Vercel) May 3,",
+    "timestamp": 1777846108092
+  },
+  {
+    "id": "9ef910b5-5c89-4a5a-ad13-1fe2c854cddc",
+    "type": "email_drafted",
+    "subject": "Submission Posted: Lab 1: Algorithmic Decision Making 1 - Written, Ethics and Algorithms",
+    "from": "Ethics and Algorithms <notifications@instructure.com>",
+    "preview": "Your instructor has released grade changes and new comments for Lab 1: Algorithmic Decision Making 1",
+    "timestamp": 1777846173714
+  },
+  {
+    "id": "21335569-ba88-4790-b063-4a83d2ca972d",
+    "type": "email_drafted",
+    "subject": "🔴 Career Brew (🎓☕) - 3rd May - 93 Hottest Early to Mid Career Jobs - Do Not Miss",
+    "from": "Career Brew <careerbrew@substack.com>",
+    "preview": "View this post on the web at https://careerbrew.substack.com/p/career-brew-3rd-may-93-hottest-early ",
+    "timestamp": 1777846228307
+  },
+  {
+    "id": "51c18833-736c-4504-9155-b9a821e5ec69",
+    "type": "email_drafted",
+    "subject": "🚨 New Externship Alert with Attronica, BeReal, and Mangusta Capital.",
+    "from": "Extern Updates <updates@extern.com>",
+    "preview": "Learn data, product, and finance. Hi Pratik, When recruiting starts, the biggest gap isn’t interest,",
+    "timestamp": 1777846288609
+  },
+  {
+    "id": "cad347cc-9c21-4dd2-bcbd-ee8ad33c5727",
+    "type": "email_drafted",
+    "subject": "Hi Pratik, start sharing today!",
+    "from": "Dropbox <no-reply@em-s.dropbox.com>",
+    "preview": "Discover the power of collaboration ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ",
+    "timestamp": 1777846353124
+  },
+  {
+    "id": "68942466-68c3-408f-a020-c78e6a77a509",
+    "type": "email_drafted",
+    "subject": "Last Day for Weekend Apps",
+    "from": "SCALIS EarlyCareers <internships@apexearlycareers.com>",
+    "preview": "### Market Volatility Exposes Weak Delegation View image: (https://media.beehiiv.com/cdn-cgi/image/f",
+    "timestamp": 1777846409195
+  },
+  {
+    "id": "1cc49929-1cd0-40d8-bc5c-bab56e7b7d33",
+    "type": "email_drafted",
+    "subject": "The Morning: Bruce vs. Donald",
+    "from": "The New York Times <nytdirect@nytimes.com>",
+    "preview": "<!DOCTYPE html><html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xm",
+    "timestamp": 1777846469466
+  },
+  {
+    "id": "aaa2ba0d-b332-4893-a05c-89096a923406",
+    "type": "email_drafted",
+    "subject": "Join us in our next event: Wednesday Build Hour: Build and Deploy to Google Cloud with Antigravity",
+    "from": "GDG Event Platform <noreply@gdg.community.dev>",
+    "preview": "Hi Pratik,Don’t miss out on our upcoming event: Wednesday Build Hour: Build and Deploy to Google Clo",
+    "timestamp": 1777846528575
   }
 ]

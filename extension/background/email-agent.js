@@ -1,68 +1,35 @@
 import { logAction } from './service-worker.js';
 
-async function sendToActiveTab(msg) {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id) chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
-}
-
 const SKIP_LABELS = ['CATEGORY_PROMOTIONS', 'CATEGORY_UPDATES', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'];
 
 const SPAM_SENDER_PATTERNS = [
   'noreply', 'no-reply', 'donotreply', 'do-not-reply',
-  'newsletter', 'subscribe', 'unsubscribe', 'marketing',
-  'notification', 'alert@', 'updates@', 'confirm@',
+  'newsletter', 'subscribe', 'unsubscribe',
+  'team@', 'hello@', 'info@', 'support@',
+  'notifications@', 'updates@', 'mailer@', 'billing@',
 ];
 
-const SKIP_SUBJECT_PATTERNS = [
-  'unsubscribe', 'deal', 'offer', '% off', 'discount',
-  'promo', 'newsletter', 'notification', 'alert',
-  'verify your', 'confirm your', 'receipt', 'invoice',
-  'order confirmation', 'shipping', 'delivery', 'package',
-  'statement', 'sale ', ' sale',
+const SPAM_SUBJECT_PATTERNS = [
+  'roundup', 'newsletter', 'digest', 'weekly', 'deals',
+  'offer', 'unsubscribe', '% off', 'discount', 'promo',
 ];
 
-async function shouldDraftReply(emailMeta, trustedSenders, settings) {
-  const senderEmail = extractEmailAddress(emailMeta.from || '');
-  const senderFull = (emailMeta.from || '').toLowerCase();
-  const subject = (emailMeta.subject || '').toLowerCase();
-  const labels = emailMeta.labelIds || [];
-
-  // Trusted senders always bypass all filters
-  if (trustedSenders.map(s => s.toLowerCase()).includes(senderEmail)) return true;
-
-  // UCSC emails bypass if setting is on (default true)
-  if (settings.includeUCSC !== false && senderEmail.endsWith('@ucsc.edu')) return true;
-
-  // Gmail category label check — fastest rejection
-  if (SKIP_LABELS.some(l => labels.includes(l))) return false;
-
-  // Must be in INBOX
-  if (!labels.includes('INBOX')) return false;
-
-  // Sender pattern check
-  if (SPAM_SENDER_PATTERNS.some(p => senderFull.includes(p))) return false;
-
-  // Subject pattern check
-  if (SKIP_SUBJECT_PATTERNS.some(p => subject.includes(p))) return false;
-
-  // "Only known senders" filter (default true)
-  if (settings.onlyKnownSenders !== false) {
-    // Real person has a display name before their <email>
-    const hasDisplayName = emailMeta.from.includes('<') && !emailMeta.from.trim().startsWith('<');
-    if (!hasDisplayName) return false;
-
-    // Check if we've replied to this sender before
-    const { actionLog = [] } = await chrome.storage.local.get('actionLog');
-    const prevReplied = actionLog.some(
-      a => a.type === 'email' && a.outcome === 'sent' && (a.to || '').toLowerCase().includes(senderEmail)
-    );
-
-    // Allow if previously replied; otherwise still allow (display name is enough)
-    // The display-name check above is the primary gate for "known"
-    if (!hasDisplayName && !prevReplied) return false;
+async function sendToActiveTab(msg) {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const validTab = tabs.find(t =>
+    t.url &&
+    !t.url.startsWith('chrome://') &&
+    !t.url.startsWith('chrome-extension://') &&
+    !t.url.startsWith('about:')
+  );
+  if (!validTab) { console.log('[SlugMind] no valid tab found'); return; }
+  console.log('[SlugMind] sending alert to tab:', validTab.id, validTab.url);
+  try {
+    const response = await chrome.tabs.sendMessage(validTab.id, msg);
+    console.log('[SlugMind] tab response:', response);
+  } catch (err) {
+    console.log('[SlugMind] tab error:', err.message);
   }
-
-  return true;
 }
 
 async function postActivity(dashboardUrl, payload) {
@@ -72,152 +39,162 @@ async function postActivity(dashboardUrl, payload) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-  } catch {
-    // dashboard may not be running locally
+  } catch {}
+}
+
+function isRealPerson(from) {
+  const lower = from.toLowerCase();
+  // Must have a display name before the angle bracket
+  const hasDisplayName = from.includes('<') && !from.trim().startsWith('<');
+  if (!hasDisplayName) return false;
+  // Display name must not look like a service/team name
+  const displayName = from.slice(0, from.indexOf('<')).toLowerCase().trim().replace(/['"]/g, '');
+  const serviceWords = ['team', 'support', 'newsletter', 'noreply', 'no-reply', 'info',
+    'hello', 'updates', 'notifications', 'help', 'billing', 'mailer', 'digest'];
+  if (serviceWords.some(w => displayName.includes(w))) return false;
+  return true;
+}
+
+function shouldShowAlert(labelIds, from, subject) {
+  if (!labelIds.includes('INBOX'))  { console.log('[SlugMind] filtered: no INBOX label');  return false; }
+  if (!labelIds.includes('UNREAD')) { console.log('[SlugMind] filtered: no UNREAD label'); return false; }
+  const skipLabels = ['CATEGORY_UPDATES', 'CATEGORY_PROMOTIONS', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'];
+  if (skipLabels.some(l => labelIds.includes(l))) {
+    console.log('[SlugMind] skipping - category label:', labelIds);
+    return false;
   }
+  const lowerFrom = from.toLowerCase();
+  if (SPAM_SENDER_PATTERNS.some(p => lowerFrom.includes(p))) {
+    console.log('[SlugMind] filtered: spam sender pattern');
+    return false;
+  }
+  const lowerSubject = (subject || '').toLowerCase();
+  if (SPAM_SUBJECT_PATTERNS.some(p => lowerSubject.includes(p))) {
+    console.log('[SlugMind] filtered: spam subject pattern');
+    return false;
+  }
+  if (!isRealPerson(from)) {
+    console.log('[SlugMind] filtered: not a real person sender');
+    return false;
+  }
+  return true;
 }
 
 export async function checkEmails() {
+  console.log('[SlugMind] checkEmails() called');
   const token = await new Promise(res => chrome.identity.getAuthToken({ interactive: false }, res));
   if (!token) return;
 
-  let threadsRes;
+  let res;
   try {
-    threadsRes = await fetch(
-      'https://www.googleapis.com/gmail/v1/users/me/threads?q=is:unread in:inbox&maxResults=10',
+    res = await fetch(
+      'https://www.googleapis.com/gmail/v1/users/me/messages?q=is:unread+in:inbox&maxResults=15',
       { headers: { Authorization: `Bearer ${token}` } }
     );
-  } catch {
-    return;
-  }
+  } catch { return; }
+  if (!res.ok) return;
 
-  if (!threadsRes.ok) return;
+  const data = await res.json();
+  const messages = data.messages || [];
+  console.log('[SlugMind] found emails:', messages.length);
 
-  const threadsData = await threadsRes.json();
-  const threads = threadsData.threads || [];
+  const { shownEmailIds = [] } = await chrome.storage.session.get('shownEmailIds');
+  const { dashboardUrl = 'http://localhost:3000' } = await chrome.storage.sync.get('dashboardUrl');
 
-  const { pendingDrafts = [] } = await chrome.storage.local.get('pendingDrafts');
-  const settings = await chrome.storage.sync.get([
-    'dashboardUrl', 'autoSend', 'trustedSenders', 'onlyKnownSenders', 'includeUCSC'
-  ]);
-  const dashboardUrl = settings.dashboardUrl || 'http://localhost:3000';
-  const trustedSenders = settings.trustedSenders || [];
+  for (const msgMeta of messages) {
+    if (shownEmailIds.includes(msgMeta.id)) continue;
 
-  const filterSettings = {
-    onlyKnownSenders: settings.onlyKnownSenders !== false,
-    includeUCSC: settings.includeUCSC !== false,
-  };
+    // Mark seen immediately so next poll skips it even if we bail early
+    const { shownEmailIds: cur = [] } = await chrome.storage.session.get('shownEmailIds');
+    await chrome.storage.session.set({ shownEmailIds: [...cur, msgMeta.id] });
 
-  for (const threadMeta of threads) {
-    if (pendingDrafts.some(d => d.threadId === threadMeta.id)) continue;
-
-    let threadRes;
+    let msgRes;
     try {
-      threadRes = await fetch(
-        `https://www.googleapis.com/gmail/v1/users/me/threads/${threadMeta.id}?format=full`,
+      msgRes = await fetch(
+        `https://www.googleapis.com/gmail/v1/users/me/messages/${msgMeta.id}?format=full`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-    } catch {
+    } catch { continue; }
+    if (!msgRes.ok) continue;
+
+    const msg = await msgRes.json();
+    const headers = msg.payload?.headers || [];
+    const subject    = extractHeader(headers, 'Subject')    || '(no subject)';
+    const fromHeader = extractHeader(headers, 'From')       || '';
+    const messageId  = extractHeader(headers, 'Message-ID') || '';
+
+    console.log('[SlugMind] email labels:', msg.labelIds);
+    console.log('[SlugMind] email from:', fromHeader);
+    console.log('[SlugMind] email subject:', subject);
+
+    if (!shouldShowAlert(msg.labelIds || [], fromHeader, subject)) {
+      console.log('[SlugMind] filtered out:', subject);
       continue;
     }
+    console.log('[SlugMind] passed filter, building alert for:', subject);
 
-    if (!threadRes.ok) continue;
+    const body = extractBody(msg.payload);
+    const preview = body.replace(/\s+/g, ' ').trim().slice(0, 150);
 
-    const threadData = await threadRes.json();
-    const messages = threadData.messages || [];
-    if (messages.length === 0) continue;
-
-    const firstMsg = messages[0];
-    const lastMsg = messages[messages.length - 1];
-
-    const subject = extractHeader(firstMsg?.payload?.headers || [], 'Subject') || '(no subject)';
-    const to = extractHeader(firstMsg?.payload?.headers || [], 'To') || '';
-    const fromHeader = extractHeader(lastMsg?.payload?.headers || [], 'From') || '';
-    const senderEmail = extractEmailAddress(fromHeader);
-
-    const emailMeta = {
-      labelIds: firstMsg.labelIds || [],
-      from: fromHeader,
-      subject,
-    };
-
-    const draft = await shouldDraftReply(emailMeta, trustedSenders, filterSettings);
-    if (!draft) continue;
-
-    const lastTwo = messages.slice(-2);
-    const messagesText = lastTwo.map(msg => {
-      const from = extractHeader(msg.payload?.headers || [], 'From') || '';
-      const body = extractBody(msg.payload);
-      return `From: ${from}\n${body.slice(0, 800)}`;
-    }).join('\n\n---\n\n');
-
+    // Draft reply with Gemini (best-effort — panel shows even if draft fails)
     const systemPrompt =
-      'You are a helpful assistant for a college student at UCSC. Draft a short, friendly, natural reply to this email. The email is from a real person — a professor, classmate, friend, or colleague. Keep it under 80 words. Sound like a student, not a robot. Do not start with "I hope this email finds you well". Return ONLY the email body, nothing else.';
-    const prompt = `Thread subject: ${subject}\n\nMessages:\n${messagesText}`;
+      'You are a helpful assistant for a college student at UCSC. Draft a short, friendly, natural reply to this email. Keep it under 80 words. Sound like a student, not a robot. Do not start with "I hope this email finds you well". Return ONLY the email body, nothing else.';
+    const prompt = `Subject: ${subject}\nFrom: ${fromHeader}\n\nEmail:\n${body.slice(0, 1000)}`;
 
-    let draftText;
+    let draftText = '';
     try {
       const geminiRes = await fetch(`${dashboardUrl}/api/gemini`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, systemPrompt }),
       });
-      if (!geminiRes.ok) continue;
-      const geminiData = await geminiRes.json();
-      draftText = geminiData.text;
-    } catch {
-      continue;
-    }
+      if (geminiRes.ok) {
+        const geminiData = await geminiRes.json();
+        draftText = geminiData.text || '';
+      }
+    } catch {}
 
-    if (!draftText) continue;
-
-    const newDraft = {
-      id: crypto.randomUUID(),
-      threadId: threadMeta.id,
-      subject,
-      to,
-      from: fromHeader,
-      draft: draftText,
-      autoSend: trustedSenders.map(s => s.toLowerCase()).includes(senderEmail),
-      timestamp: Date.now(),
-    };
-
-    const { pendingDrafts: currentDrafts = [] } = await chrome.storage.local.get('pendingDrafts');
-    await chrome.storage.local.set({ pendingDrafts: [...currentDrafts, newDraft] });
-
+    // "to" is the original sender — that's who the reply goes to
     await sendToActiveTab({
       type: 'SHOW_EMAIL_ALERT',
-      draftId: newDraft.id,
-      threadId: newDraft.threadId,
-      from: fromHeader,
-      fromEmail: senderEmail,
+      emailId:   msgMeta.id,
+      messageId,
+      threadId:  msg.threadId,
+      from:      fromHeader,
       subject,
-      preview: draftText.substring(0, 120),
-      draft: draftText,
-      autoSend: newDraft.autoSend,
+      preview,
+      draft:     draftText,
+      to:        fromHeader,
     });
 
-    await logAction('email', 'Drafted reply to: ' + subject, 'pending');
+    await logAction('email', `New email from: ${fromHeader} — ${subject}`, 'alerted');
     await postActivity(dashboardUrl, {
       type: 'email_drafted',
       subject,
       from: fromHeader,
-      preview: draftText.substring(0, 100),
-      extensionId: chrome.runtime.id,
+      preview: preview.substring(0, 100),
     });
-    await updateEmailBadge();
+
+    // One panel per poll cycle to avoid flooding
+    break;
   }
 }
 
-export async function sendDraft(draftId) {
-  const { pendingDrafts = [] } = await chrome.storage.local.get('pendingDrafts');
-  const draft = pendingDrafts.find(d => d.id === draftId);
-  if (!draft) return;
-
+export async function sendDraft({ emailId, messageId, threadId, to, subject, body }) {
   const token = await new Promise(res => chrome.identity.getAuthToken({ interactive: false }, res));
-  if (!token) return;
+  if (!token) return false;
 
-  const rawMessage = `To: ${draft.to}\r\nSubject: Re: ${draft.subject}\r\n\r\n${draft.draft}`;
+  const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
+  const headers = [
+    `To: ${to}`,
+    `Subject: ${replySubject}`,
+  ];
+  if (messageId) {
+    headers.push(`In-Reply-To: ${messageId}`);
+    headers.push(`References: ${messageId}`);
+  }
+  const rawMessage = [...headers, '', body].join('\r\n');
+
   const encoded = btoa(unescape(encodeURIComponent(rawMessage)))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
@@ -225,47 +202,29 @@ export async function sendDraft(draftId) {
     const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw: encoded }),
+      body: JSON.stringify({ raw: encoded, threadId }),
     });
-    if (!res.ok) return;
-  } catch {
-    return;
-  }
+    if (!res.ok) return false;
+  } catch { return false; }
 
-  const updated = pendingDrafts.filter(d => d.id !== draftId);
-  await chrome.storage.local.set({ pendingDrafts: updated });
+  // Mark original as read
+  try {
+    await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${emailId}/modify`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
+    });
+  } catch {}
 
   const { dashboardUrl = 'http://localhost:3000' } = await chrome.storage.sync.get('dashboardUrl');
-  await logAction('email', 'Sent reply to: ' + draft.subject, 'sent');
-  await postActivity(dashboardUrl, {
-    type: 'email_sent',
-    subject: draft.subject,
-    to: draft.to,
-  });
-  await updateEmailBadge();
-}
-
-async function updateEmailBadge() {
-  const { pendingDrafts = [] } = await chrome.storage.local.get('pendingDrafts');
-  const { focusMode } = await chrome.storage.session.get('focusMode');
-  if (focusMode) return; // focus badge takes priority
-  const count = pendingDrafts.length;
-  if (count > 0) {
-    chrome.action.setBadgeBackgroundColor({ color: '#7C3AED' });
-    chrome.action.setBadgeText({ text: String(count) });
-  } else {
-    chrome.action.setBadgeText({ text: '' });
-  }
+  await logAction('email', 'Sent reply to: ' + subject, 'sent');
+  await postActivity(dashboardUrl, { type: 'email_sent', subject, to });
+  return true;
 }
 
 function extractHeader(headers, name) {
   const h = headers.find(h => h.name.toLowerCase() === name.toLowerCase());
   return h ? h.value : null;
-}
-
-function extractEmailAddress(from) {
-  const match = from.match(/<([^>]+)>/);
-  return match ? match[1].toLowerCase() : from.toLowerCase().trim();
 }
 
 function extractBody(payload) {

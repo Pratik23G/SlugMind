@@ -34,6 +34,7 @@
         "https://mail.google.com/*"
       ],
       "js": [
+        "content/ambient-panel.js",
         "content/toast.js",
         "content/gmail-injector.js"
       ],

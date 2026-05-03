@@ -1,80 +1,78 @@
+console.log('[SlugMind] service worker started');
+
 import { checkEmails, sendDraft } from './email-agent.js';
 import { checkCalendar, checkUpcomingEvents } from './calendar-agent.js';
 import { runRedundancyCheck, approveReminder } from './redundancy-agent.js';
 import { startFocusTimer, stopFocusTimer, tickFocusTimer, addTask, updateTask } from './focus-agent.js';
 
+// ── Create alarms at top level so they survive service worker restarts ────────
+chrome.alarms.create('emailCheck',    { periodInMinutes: 1 });
+chrome.alarms.create('calendarCheck', { periodInMinutes: 5 });
+chrome.alarms.create('reminderCheck', { periodInMinutes: 1 });
+chrome.alarms.create('focusTick',     { periodInMinutes: 1 });
+chrome.alarms.create('tokenRefresh',  { periodInMinutes: 30 });
+chrome.alarms.create('redundancyCheck', { periodInMinutes: 1440 });
+
+// ── First-install defaults ────────────────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(async () => {
   const existing = await chrome.storage.sync.get([
-    'dashboardUrl',
-    'autoSend',
-    'trustedSenders',
-    'focusSuppressToasts',
-    'timerPresets'
+    'dashboardUrl', 'autoSend', 'trustedSenders', 'focusSuppressToasts', 'timerPresets'
   ]);
 
   const defaults = {};
-  if (existing.dashboardUrl === undefined) defaults.dashboardUrl = 'http://localhost:3000';
-  if (existing.autoSend === undefined) defaults.autoSend = false;
-  if (existing.trustedSenders === undefined) defaults.trustedSenders = [];
+  if (existing.dashboardUrl === undefined)      defaults.dashboardUrl = 'http://localhost:3000';
+  if (existing.autoSend === undefined)          defaults.autoSend = false;
+  if (existing.trustedSenders === undefined)    defaults.trustedSenders = [];
   if (existing.focusSuppressToasts === undefined) defaults.focusSuppressToasts = true;
-  if (existing.timerPresets === undefined) defaults.timerPresets = [25, 45];
+  if (existing.timerPresets === undefined)      defaults.timerPresets = [25, 45];
 
   if (Object.keys(defaults).length > 0) {
     await chrome.storage.sync.set(defaults);
   }
-
-  chrome.alarms.create('emailPoll', { periodInMinutes: 1 });
-  chrome.alarms.create('calendarPoll', { periodInMinutes: 5 });
-  chrome.alarms.create('reminderCheck', { periodInMinutes: 1 });
-  chrome.alarms.create('redundancyCheck', { periodInMinutes: 1440 });
-  chrome.alarms.create('focusTick', { periodInMinutes: 1 });
-  chrome.alarms.create('tokenRefresh', { periodInMinutes: 30 });
 });
 
-// Validate cached token is still alive; clear auth state if not
+// ── Token health check on every startup ───────────────────────────────────────
 function refreshTokenCheck() {
   chrome.identity.getAuthToken({ interactive: false }, function (token) {
     if (chrome.runtime.lastError || !token) {
       chrome.storage.local.get('authToken', ({ authToken }) => {
-        if (authToken) {
-          chrome.identity.removeCachedAuthToken({ token: authToken }, () => {});
-        }
+        if (authToken) chrome.identity.removeCachedAuthToken({ token: authToken }, () => {});
       });
       chrome.storage.local.set({ isAuthenticated: false, authToken: null });
     }
   });
 }
 
-// Run a token check when the service worker wakes up
 refreshTokenCheck();
 
+// ── Alarm handler (registered at top level) ───────────────────────────────────
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'tokenRefresh') {
     refreshTokenCheck();
     return;
   }
 
-  if (alarm.name === 'emailPoll') {
+  if (alarm.name === 'emailCheck') {
+    console.log('[SlugMind] checking emails...');
     const { authToken } = await chrome.storage.local.get('authToken');
-    if (!authToken) {
-      console.log('No auth token - skipping email poll');
-      return;
-    }
+    if (!authToken) { console.log('[SlugMind] no auth token, skipping'); return; }
     await checkEmails();
-  } else if (alarm.name === 'calendarPoll') {
+
+  } else if (alarm.name === 'calendarCheck') {
     const { authToken } = await chrome.storage.local.get('authToken');
-    if (!authToken) {
-      console.log('No auth token - skipping calendar poll');
-      return;
-    }
+    if (!authToken) return;
     await checkCalendar();
+
   } else if (alarm.name === 'reminderCheck') {
     const { authToken } = await chrome.storage.local.get('authToken');
     if (authToken) await checkUpcomingEvents();
+
   } else if (alarm.name === 'redundancyCheck') {
     await runRedundancyCheck();
+
   } else if (alarm.name === 'focusTick') {
     await tickFocusTimer();
+
   } else if (alarm.name.startsWith('reminder_')) {
     const reminderId = alarm.name.slice('reminder_'.length);
     const { suggestedReminders = [] } = await chrome.storage.local.get('suggestedReminders');
@@ -90,6 +88,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
+// ── Message handler (registered at top level) ─────────────────────────────────
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handleMessage(message, sendResponse);
   return true;
@@ -109,12 +108,11 @@ async function handleMessage(message, sendResponse) {
     }
     case 'GET_STATUS': {
       const session = await chrome.storage.session.get(['focusMode']);
-      const { pendingDrafts = [] } = await chrome.storage.local.get('pendingDrafts');
       const { pendingConflicts = [] } = await chrome.storage.local.get('pendingConflicts');
       sendResponse({
         focusMode: session.focusMode || false,
-        emailDraftsPending: pendingDrafts.length,
-        conflictsCount: pendingConflicts.length
+        conflictsCount: pendingConflicts.length,
+        pendingDraftsCount: 0,
       });
       break;
     }
@@ -134,20 +132,19 @@ async function handleMessage(message, sendResponse) {
       break;
     }
     case 'SEND_DRAFT': {
-      await sendDraft(message.draftId);
-      sendResponse({ ok: true });
+      const ok = await sendDraft({
+        emailId:   message.emailId,
+        messageId: message.messageId,
+        threadId:  message.threadId,
+        to:        message.to,
+        subject:   message.subject,
+        body:      message.draftText,
+      });
+      sendResponse({ ok });
       break;
     }
     case 'CLEAR_BADGE': {
       chrome.action.setBadgeText({ text: '' });
-      sendResponse({ ok: true });
-      break;
-    }
-    case 'DISMISS_DRAFT': {
-      const { pendingDrafts = [] } = await chrome.storage.local.get('pendingDrafts');
-      const updated = pendingDrafts.filter(d => d.id !== message.draftId);
-      await chrome.storage.local.set({ pendingDrafts: updated });
-      await updateBadgeCount();
       sendResponse({ ok: true });
       break;
     }
@@ -164,9 +161,9 @@ async function handleMessage(message, sendResponse) {
     }
     case 'DRAFT_CONFLICT_EMAIL': {
       const { dashboardUrl = 'http://localhost:3000' } = await chrome.storage.sync.get('dashboardUrl');
-      const { eventA, eventB } = message;
+      const { event1, event2 } = message;
       const systemPrompt = 'You are helping a college student write a professional email about a calendar conflict. Keep it under 60 words, friendly and direct. Return ONLY the email body.';
-      const prompt = `I have a scheduling conflict between "${eventA?.title}" and "${eventB?.title}". Write a short email to the organizer of the second event explaining I may not be able to attend due to a prior commitment and asking if there is a way to reschedule or get notes.`;
+      const prompt = `I have a scheduling conflict between "${event1?.title || event1?.summary}" and "${event2?.title || event2?.summary}". Write a short email to the organizer explaining I may not be able to attend due to a prior commitment and asking to reschedule or get notes.`;
       try {
         const res = await fetch(`${dashboardUrl}/api/gemini`, {
           method: 'POST',
@@ -175,9 +172,7 @@ async function handleMessage(message, sendResponse) {
         });
         const data = res.ok ? await res.json() : {};
         sendResponse({ draft: data.text || '' });
-      } catch {
-        sendResponse({ draft: '' });
-      }
+      } catch { sendResponse({ draft: '' }); }
       break;
     }
     case 'DRAFT_RESCHEDULE_EMAIL': {
@@ -193,9 +188,7 @@ async function handleMessage(message, sendResponse) {
         });
         const data = res.ok ? await res.json() : {};
         sendResponse({ draft: data.text || '' });
-      } catch {
-        sendResponse({ draft: '' });
-      }
+      } catch { sendResponse({ draft: '' }); }
       break;
     }
     case 'SEND_PLAIN_EMAIL': {
@@ -203,7 +196,8 @@ async function handleMessage(message, sendResponse) {
       if (!token) { sendResponse({ ok: false }); break; }
       const { to, subject, body } = message;
       const raw = `To: ${to}\r\nSubject: ${subject}\r\n\r\n${body}`;
-      const encoded = btoa(unescape(encodeURIComponent(raw))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const encoded = btoa(unescape(encodeURIComponent(raw)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       try {
         const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages/send', {
           method: 'POST',
@@ -211,9 +205,7 @@ async function handleMessage(message, sendResponse) {
           body: JSON.stringify({ raw: encoded }),
         });
         sendResponse({ ok: res.ok });
-      } catch {
-        sendResponse({ ok: false });
-      }
+      } catch { sendResponse({ ok: false }); }
       break;
     }
     case 'MARK_REMINDER_DISMISSED': {
@@ -229,17 +221,6 @@ async function handleMessage(message, sendResponse) {
   }
 }
 
-async function updateBadgeCount() {
-  const { pendingDrafts = [] } = await chrome.storage.local.get('pendingDrafts');
-  const count = pendingDrafts.length;
-  if (count > 0) {
-    chrome.action.setBadgeBackgroundColor({ color: '#F59E0B' });
-    chrome.action.setBadgeText({ text: String(count) });
-  } else {
-    chrome.action.setBadgeText({ text: '' });
-  }
-}
-
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'toggle-slugmind') {
     chrome.action.openPopup();
@@ -248,20 +229,11 @@ chrome.commands.onCommand.addListener((command) => {
 
 export async function sendToActiveTab(msg) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id) {
-    chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
-  }
+  if (tab?.id) chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
 }
 
 export async function logAction(type, description, outcome) {
   const { actionLog = [] } = await chrome.storage.local.get('actionLog');
-  actionLog.push({
-    id: crypto.randomUUID(),
-    type,
-    description,
-    outcome,
-    timestamp: Date.now()
-  });
-  const trimmed = actionLog.slice(-500);
-  await chrome.storage.local.set({ actionLog: trimmed });
+  actionLog.push({ id: crypto.randomUUID(), type, description, outcome, timestamp: Date.now() });
+  await chrome.storage.local.set({ actionLog: actionLog.slice(-500) });
 }
