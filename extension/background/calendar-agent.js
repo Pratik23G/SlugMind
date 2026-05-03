@@ -1,6 +1,20 @@
 async function sendToActiveTab(msg) {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id) chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+  const allTabs = await chrome.tabs.query({});
+  const validTabs = allTabs.filter(t =>
+    t.url &&
+    !t.url.startsWith('chrome://') &&
+    !t.url.startsWith('chrome-extension://') &&
+    !t.url.startsWith('about:') &&
+    !t.url.startsWith('edge://')
+  );
+  validTabs.sort((a, b) => (b.active ? 1 : 0) - (a.active ? 1 : 0));
+  for (const tab of validTabs) {
+    try {
+      await chrome.tabs.sendMessage(tab.id, msg);
+      console.log('[SlugMind] calendar alert sent to tab:', tab.id);
+      return;
+    } catch { /* content script not on this tab, try next */ }
+  }
 }
 
 function extractMeetLink(rawEvent) {
