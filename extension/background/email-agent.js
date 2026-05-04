@@ -1,3 +1,5 @@
+import { callGemini, callOllama, parseJSON, draftEmailReply } from './ai-helpers.js';
+
 const SKIP_LABELS = ['CATEGORY_PROMOTIONS', 'CATEGORY_UPDATES', 'CATEGORY_SOCIAL', 'CATEGORY_FORUMS'];
 
 const SPAM_SENDER_PATTERNS = [
@@ -140,22 +142,24 @@ export async function checkEmails() {
     const body = extractBody(msg.payload);
     const preview = body.replace(/\s+/g, ' ').trim().slice(0, 150);
 
-    // Draft reply with Gemini (best-effort — panel shows even if draft fails)
-    const systemPrompt =
-      'You are a helpful assistant for a college student at UCSC. Draft a short, friendly, natural reply to this email. Keep it under 80 words. Sound like a student, not a robot. Do not start with "I hope this email finds you well". Return ONLY the email body, nothing else.';
-    const prompt = `Subject: ${subject}\nFrom: ${fromHeader}\n\nEmail:\n${body.slice(0, 1000)}`;
+    // Step 1: Classify with Gemini
+    let priority = 'medium';
+    let suggestedTone = 'casual';
+    try {
+      const classifyText = await callGemini(
+        `You are an email classifier. Respond with JSON only:\n{"needsReply":true/false,"priority":"high/medium/low","category":"professor/classmate/work/personal/other","suggestedTone":"formal/casual/brief"}\n\nFrom: ${fromHeader}\nSubject: ${subject}\nPreview: ${body.slice(0, 200)}`
+      );
+      const cls = parseJSON(classifyText);
+      if (cls) {
+        priority = cls.priority || 'medium';
+        suggestedTone = cls.suggestedTone || 'casual';
+      }
+    } catch {}
 
+    // Step 2: Draft reply with Ollama → fallback Gemini
     let draftText = '';
     try {
-      const geminiRes = await fetch(`${dashboardUrl}/api/gemini`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, systemPrompt }),
-      });
-      if (geminiRes.ok) {
-        const geminiData = await geminiRes.json();
-        draftText = geminiData.text || '';
-      }
+      draftText = await draftEmailReply(fromHeader, subject, body.slice(0, 1000), suggestedTone) || '';
     } catch {}
 
     // "to" is the original sender — that's who the reply goes to
@@ -169,6 +173,7 @@ export async function checkEmails() {
       preview,
       draft:     draftText,
       to:        fromHeader,
+      priority,
     });
 
     await postActivity(dashboardUrl, {

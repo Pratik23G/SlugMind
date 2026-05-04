@@ -231,7 +231,7 @@ function ActivityRow({ entry, isNew }) {
         </span>
       </td>
       <td style={{ padding: '10px 12px', color: '#E2E8F0', fontSize: 13, fontFamily: FONT }}>{desc}</td>
-      <td style={{ padding: '10px 16px' }}>
+      <td className="action-log-from" style={{ padding: '10px 16px' }}>
         {entry.from && (
           <span style={{ color: '#4B5563', fontSize: 11, maxWidth: 160, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
             {entry.from}
@@ -338,9 +338,9 @@ export default function DashboardPage() {
     <div style={{ padding: '32px 40px', maxWidth: 960, margin: '0 auto', fontFamily: FONT }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+      <div className="greeting-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#fff', margin: '0 0 6px', fontFamily: FONT }}>
+          <h1 className="page-title" style={{ fontSize: 26, fontWeight: 700, color: '#fff', margin: '0 0 6px', fontFamily: FONT }}>
             {getGreeting()}, Pratik
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6B7280', fontFamily: FONT }}>
@@ -354,7 +354,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         <StatCard label="Emails drafted"   value={stats.emailsDrafted}   icon={<EmailIcon    size={20} />}               borderColor="#7C3AED" hoverColor="#A855F7" loading={loading} />
         <StatCard label="Conflicts caught" value={stats.conflictsCaught} icon={<ConflictIcon size={20} />}               borderColor="#F59E0B" hoverColor="#FCD34D" loading={loading} />
         <StatCard label="Tasks completed"  value={stats.tasksCompleted}  icon={<CheckIcon    size={20} />}               borderColor="#10B981" hoverColor="#34D399" loading={loading} />
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                   <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>Time</th>
                   <th style={{ padding: '8px 12px', width: 40 }} />
                   <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>Action</th>
-                  <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>From</th>
+                  <th className="action-log-from" style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>From</th>
                 </tr>
               </thead>
               <tbody>

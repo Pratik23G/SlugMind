@@ -56,13 +56,22 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     console.log('[SlugMind] checking emails...');
     const { authToken } = await chrome.storage.local.get('authToken');
     if (!authToken) { console.log('[SlugMind] no auth token, skipping'); return; }
-    await checkEmails();
+    const emailStart = Date.now();
+    const [emailResult] = await Promise.allSettled([checkEmails()]);
+    console.log(`[SlugMind] email agent completed in ${Date.now() - emailStart}ms`);
+    if (emailResult.status === 'rejected') console.error('[SlugMind] email agent failed:', emailResult.reason);
 
   } else if (alarm.name === 'calendarCheck') {
     const { authToken } = await chrome.storage.local.get('authToken');
     if (!authToken) return;
-    await checkCalendarConflicts();
-    await checkUpcomingEvents();
+    const start = Date.now();
+    const [conflictResult, reminderResult] = await Promise.allSettled([
+      checkCalendarConflicts(),
+      checkUpcomingEvents(),
+    ]);
+    console.log(`[SlugMind] calendar agents completed in ${Date.now() - start}ms`);
+    if (conflictResult.status === 'rejected') console.error('[SlugMind] conflict agent failed:', conflictResult.reason);
+    if (reminderResult.status === 'rejected') console.error('[SlugMind] reminder agent failed:', reminderResult.reason);
 
   } else if (alarm.name === 'reminderCheck') {
     const { authToken } = await chrome.storage.local.get('authToken');
@@ -97,12 +106,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 async function handleMessage(message, sendResponse) {
   switch (message.type) {
-    case 'FOCUS_START': {
+    case 'FOCUS_START':
+    case 'START_FOCUS': {
       await startFocusTimer(message.duration);
       sendResponse({ ok: true });
       break;
     }
-    case 'FOCUS_STOP': {
+    case 'FOCUS_STOP':
+    case 'STOP_FOCUS': {
       await stopFocusTimer();
       sendResponse({ ok: true });
       break;

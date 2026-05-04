@@ -256,6 +256,11 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
         border-radius: 12px;
         animation: smFocusBorder 2s ease-in-out infinite;
       }
+      @keyframes pulseBtnAnim {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.65; }
+      }
+      .sm-btn-pulse { animation: pulseBtnAnim 1s ease-in-out infinite; }
       @keyframes smFocusBorder {
         0%, 100% { border-color: #7C3AED; }
         50% { border-color: #A855F7; box-shadow: 0 0 12px rgba(124,58,237,0.25); }
@@ -433,6 +438,18 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
     _email(cfg) {
       const panel = this._shell('#6366f1');
       panel.appendChild(this._header('ph-envelope', 'New email', '#a5b4fc', panel));
+
+      if (cfg.priority === 'high') {
+        const badge = document.createElement('span');
+        badge.textContent = 'URGENT';
+        badge.style.cssText = 'display:inline-block;background:#EF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:0.5px;margin-bottom:6px;';
+        panel.appendChild(badge);
+      } else if (cfg.priority === 'medium') {
+        const badge = document.createElement('span');
+        badge.textContent = 'Medium priority';
+        badge.style.cssText = 'display:inline-block;background:rgba(245,158,11,0.2);color:#F59E0B;font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;letter-spacing:0.3px;margin-bottom:6px;border:1px solid rgba(245,158,11,0.3);';
+        panel.appendChild(badge);
+      }
 
       const from = document.createElement('div');
       from.style.cssText = 'font-weight:600;font-size:13px;color:#e2e8f0;margin-bottom:2px;';
@@ -662,8 +679,19 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
 
     _reminder(cfg) {
       const ev = cfg.event || {};
-      const panel = this._shell('#f59e0b');
-      panel.appendChild(this._header('ph-timer', 'Starting in 15 min', '#fcd34d', panel));
+      const urgency = cfg.urgency || 'low';
+      const mins = cfg.minsUntil || 0;
+      const isZoom = ev.meetLink && ev.meetLink.includes('zoom.us');
+
+      const URGENCY_STYLE = {
+        low:    { border: '#F59E0B', titleColor: '#fcd34d', header: `Starting in ${mins} min` },
+        medium: { border: '#F97316', titleColor: '#fdba74', header: `Starting in ${mins} min` },
+        high:   { border: '#EF4444', titleColor: '#fca5a5', header: `Starting in ${mins} min — join now` },
+      };
+      const style = URGENCY_STYLE[urgency] || URGENCY_STYLE.low;
+
+      const panel = this._shell(style.border);
+      panel.appendChild(this._header('ph-timer', style.header, style.titleColor, panel));
 
       const title = document.createElement('div');
       title.style.cssText = 'font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:5px;';
@@ -677,10 +705,13 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
 
       const btns = [];
       if (ev.meetLink) {
-        btns.push(this._btn(`${ph('ph-video-camera')} Join Meeting`, 'sm-btn-primary', () => {
+        const joinLabel = isZoom ? 'Join Zoom' : 'Join Meeting';
+        const joinBtn = this._btn(`${ph('ph-video-camera')} ${joinLabel}`, 'sm-btn-primary', () => {
           window.open(ev.meetLink, '_blank');
           this.dismiss(panel);
-        }));
+        });
+        if (urgency === 'high') joinBtn.classList.add('sm-btn-pulse');
+        btns.push(joinBtn);
       }
       btns.push(this._btn(`${ph('ph-alarm')} Snooze 5 min`, 'sm-btn-muted', () => {
         this.dismiss(panel);
@@ -691,6 +722,11 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
         this.dismiss(panel);
       }));
       panel.appendChild(this._actions(...btns));
+
+      // Auto-dismiss for non-urgent reminders
+      if (urgency === 'low')    setTimeout(() => this.dismiss(panel), 30000);
+      else if (urgency === 'medium') setTimeout(() => this.dismiss(panel), 20000);
+
       return panel;
     }
 
@@ -843,8 +879,22 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       const kbHint = document.createElement('span');
       kbHint.className = 'sm-fp-kb-hint';
       kbHint.textContent = 'Ctrl+Shift+S';
+      const testLink = document.createElement('span');
+      testLink.textContent = 'Test alert';
+      testLink.style.cssText = 'font-size:11px;color:#374151;cursor:pointer;margin-top:5px;display:block;';
+      testLink.addEventListener('click', () => {
+        this.panelRef.show({
+          type:    'email',
+          emailId: 'demo-' + Date.now(),
+          from:    'Prof. Smith <smith@ucsc.edu>',
+          subject: 'RE: Office Hours Tomorrow',
+          preview: 'Sure, come by at 2pm. Looking forward to discussing your project.',
+          draft:   "Thank you Professor, I'll be there.",
+        });
+      });
       footer.appendChild(dashLink);
       footer.appendChild(kbHint);
+      footer.appendChild(testLink);
       panel.appendChild(footer);
 
       document.body.appendChild(panel);
@@ -911,14 +961,17 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       focusBtn.textContent = this._focusActive ? 'Stop Focus' : 'Start Focus';
       focusBtn.addEventListener('click', () => {
         if (this._focusActive) {
-          try { chrome.runtime.sendMessage({ type: 'FOCUS_STOP' }); } catch {}
+          try { chrome.runtime.sendMessage({ type: 'STOP_FOCUS' }, () => {}); } catch {}
+          this.setFocusMode(false);
         } else {
           let mins = this._selectedMins;
           if (mins === 0) {
             const inp = document.getElementById('sm-fp-custom-mins');
             mins = parseInt(inp?.value) || 25;
           }
-          try { chrome.runtime.sendMessage({ type: 'FOCUS_START', duration: mins }); } catch {}
+          const endTime = Date.now() + mins * 60 * 1000;
+          try { chrome.runtime.sendMessage({ type: 'START_FOCUS', duration: mins }, () => {}); } catch {}
+          this.setFocusMode(true, endTime);
         }
       });
       container.appendChild(focusBtn);
@@ -990,6 +1043,7 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       this.isOpen = true;
       this._panel.classList.add('open');
       this._loadData();
+      this._initFocusState();
       try { chrome.storage.session.set({ smPanelOpen: true }); } catch {}
     }
 
@@ -1032,6 +1086,15 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
           this._refreshEvents(data.upcomingEvents || data.calendarEvents || []);
         });
       } catch {}
+      fetch('https://slugmind.vercel.app/api/activity')
+        .then(r => r.json())
+        .then(data => {
+          const emailsEl = this._panel.querySelector('#sm-fp-stat-emails');
+          const focusEl  = this._panel.querySelector('#sm-fp-stat-focus');
+          if (emailsEl) emailsEl.textContent = data.stats?.emailsDrafted ?? 0;
+          if (focusEl)  focusEl.textContent  = (data.stats?.focusMinutes ?? 0) + 'm';
+        })
+        .catch(() => {});
     }
 
     _refreshStats(log) {
@@ -1126,8 +1189,9 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
 
     _initFocusState() {
       try {
-        chrome.storage.session.get(['focusMode', 'focusEndsAt'], d => {
-          if (d.focusMode) this.setFocusMode(true, d.focusEndsAt);
+        chrome.storage.session.get(['focusMode', 'focusEnd'], d => {
+          if (d.focusMode) this.setFocusMode(true, d.focusEnd);
+          else this.setFocusMode(false);
         });
       } catch {}
     }
@@ -1154,15 +1218,16 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       const cd       = this._panel.querySelector('#sm-fp-countdown');
       const sec      = this._panel.querySelector('#sm-fp-focus-section');
 
-      if (focusBtn) { focusBtn.textContent = 'Stop Focus'; focusBtn.classList.add('stop'); }
-      if (cd)  cd.style.display = 'block';
+      if (focusBtn) focusBtn.classList.add('stop');
+      if (cd)  cd.style.display = 'none';
       if (sec) sec.classList.add('focus-pulsing');
 
       this._stopCountdown();
       const tick = () => {
         const rem = endsAt ? Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)) : 0;
         const m = Math.floor(rem / 60), s = rem % 60;
-        if (cd) cd.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+        const timeStr = endsAt ? ` · ${m}:${s < 10 ? '0' : ''}${s}` : '';
+        if (focusBtn) focusBtn.textContent = `Stop${timeStr}`;
         if (rem === 0 && this._countdownInterval) {
           clearInterval(this._countdownInterval);
           this._countdownInterval = null;
@@ -1231,7 +1296,9 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
 
   function showReminder(msg) {
     window.slugmindPanel.show({
-      type:  'reminder',
+      type:      'reminder',
+      minsUntil: msg.minsUntil || 0,
+      urgency:   msg.urgency   || 'low',
       event: {
         id:       msg.eventId   || msg.event?.id,
         title:    msg.title     || msg.event?.title,

@@ -1,3 +1,5 @@
+import { callGemini, parseJSON } from './ai-helpers.js';
+
 async function sendToActiveTab(msg) {
   const allTabs = await chrome.tabs.query({});
   const validTabs = allTabs.filter(t =>
@@ -17,10 +19,12 @@ async function sendToActiveTab(msg) {
   }
 }
 
+const MEET_LINK_REGEX = /(https:\/\/[a-z0-9.]*zoom\.us\/j\/[^\s"<>]+|https:\/\/meet\.google\.com\/[a-z-]+)/;
+
 function extractMeetLink(rawEvent) {
-  const text = [rawEvent.hangoutLink, rawEvent.description, rawEvent.location]
+  const candidates = [rawEvent.hangoutLink, rawEvent.location, rawEvent.description]
     .filter(Boolean).join(' ');
-  const match = text.match(/https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}/);
+  const match = candidates.match(MEET_LINK_REGEX);
   return match ? match[0] : rawEvent.hangoutLink || null;
 }
 
@@ -29,39 +33,62 @@ export async function checkUpcomingEvents() {
   if (!token) return;
 
   const now = new Date();
-  const soon = new Date(now.getTime() + 20 * 60 * 1000);
+  const timeMax = new Date(now.getTime() + 20 * 60 * 1000);
 
   let res;
   try {
     res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${soon.toISOString()}&singleEvents=true&orderBy=startTime`,
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${timeMax.toISOString()}&singleEvents=true&orderBy=startTime`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
   } catch { return; }
   if (!res.ok) return;
 
   const data = await res.json();
-  const { remindedEvents = [], dismissedReminders = [] } = await chrome.storage.local.get(['remindedEvents', 'dismissedReminders']);
+  const events = data.items || [];
+  console.log('[SlugMind] events in next 20min:', events.length);
 
-  for (const rawEvent of data.items || []) {
+  const { reminders_sent: reminders = {} } = await chrome.storage.session.get('reminders_sent');
+  const { dismissedReminders = [] } = await chrome.storage.local.get('dismissedReminders');
+  console.log('[SlugMind] already sent reminders:', Object.keys(reminders));
+
+  const thresholds = [15, 10, 5];
+  let updated = false;
+
+  for (const rawEvent of events) {
     if (!rawEvent.start?.dateTime) continue;
     const eventId = rawEvent.id;
-    if (remindedEvents.includes(eventId) || dismissedReminders.includes(eventId)) continue;
+    if (dismissedReminders.includes(eventId)) continue;
 
     const startMs = new Date(rawEvent.start.dateTime).getTime();
-    const minsUntil = Math.round((startMs - now.getTime()) / 60000);
-    if (minsUntil < 12 || minsUntil > 18) continue;
+    const minutesAway = (startMs - now.getTime()) / 60000;
+    console.log('[SlugMind] event start:', rawEvent.start.dateTime, '| minutes away:', minutesAway.toFixed(1), '| title:', rawEvent.summary);
 
-    const meetLink = extractMeetLink(rawEvent);
-    await sendToActiveTab({
-      type: 'SHOW_REMINDER',
-      eventId,
-      title: rawEvent.summary || '(untitled)',
-      minsUntil,
-      meetLink,
-    });
+    for (const threshold of thresholds) {
+      const key = `${eventId}_${threshold}`;
+      const inWindow = minutesAway <= threshold && minutesAway > (threshold - 1);
+      if (!inWindow || reminders[key]) continue;
 
-    await chrome.storage.local.set({ remindedEvents: [...remindedEvents, eventId] });
+      const urgency = threshold <= 5 ? 'high' : threshold <= 10 ? 'medium' : 'low';
+      const meetLink = extractMeetLink(rawEvent);
+      console.log(`[SlugMind] ${threshold}min reminder firing for: ${rawEvent.summary}`);
+
+      await sendToActiveTab({
+        type: 'SHOW_REMINDER',
+        eventId,
+        title: rawEvent.summary || '(untitled)',
+        minsUntil: Math.round(minutesAway),
+        urgency,
+        meetLink,
+      });
+
+      reminders[key] = true;
+      updated = true;
+    }
+  }
+
+  if (updated) {
+    await chrome.storage.session.set({ reminders_sent: reminders });
   }
 }
 
@@ -141,23 +168,11 @@ export async function checkCalendarConflicts() {
     const systemPrompt =
       "A student has two overlapping calendar events. Suggest 3 alternative times for the second event that don't conflict. Return ONLY a JSON array of [{date: 'YYYY-MM-DD', time: 'HH:MM', label: 'friendly label'}]. Nothing else.";
 
+    const geminiText = await callGemini(prompt, systemPrompt);
     let alternatives = [];
-    try {
-      const geminiRes = await fetch(`${dashboardUrl}/api/gemini`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, systemPrompt })
-      });
-      if (geminiRes.ok) {
-        const geminiData = await geminiRes.json();
-        const raw = geminiData.text || '[]';
-        const jsonMatch = raw.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          alternatives = JSON.parse(jsonMatch[0]);
-        }
-      }
-    } catch {
-      alternatives = [];
+    if (geminiText) {
+      const parsed = parseJSON(geminiText);
+      alternatives = parsed || [];
     }
 
     const newConflict = {

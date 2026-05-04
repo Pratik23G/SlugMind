@@ -46,3 +46,55 @@ body {
 .focus-banner-active {
   animation: focusPulse 2s ease-in-out infinite;
 }
+
+@keyframes pulseBtnAnim {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+.main-content {
+  margin-left: 240px;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+    padding-bottom: 80px;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .stat-card {
+    padding: 12px !important;
+  }
+  .stat-number {
+    font-size: 24px !important;
+  }
+  .action-log-from {
+    display: none !important;
+  }
+  .page-title {
+    font-size: 20px !important;
+  }
+  .greeting-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .bottom-nav {
+    display: flex !important;
+  }
+  .sidebar-desktop {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .bottom-nav {
+    display: none !important;
+  }
+  .sidebar-desktop {
+    display: flex !important;
+  }
+}
