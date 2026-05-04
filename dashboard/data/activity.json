@@ -151,5 +151,35 @@
     "subject": "AGENT READ IT!!!",
     "to": "Pratik <pgc67990@gmail.com>",
     "timestamp": 1777850759097
+  },
+  {
+    "id": "9ad95b5b-52fd-4c77-b601-792c64d9c78d",
+    "type": "email_drafted",
+    "subject": "Re: AGENT READ IT!!!",
+    "from": "Pratik <pgc67990@gmail.com>",
+    "preview": "Hi Pratik, Good to know it worked. Just wanted to make sure you saw it. Best Regards, Pratik On Sun,",
+    "timestamp": 1777851029461
+  },
+  {
+    "id": "965d8a14-279b-4faf-ab59-c109e9913f7c",
+    "type": "email_sent",
+    "subject": "Re: AGENT READ IT!!!",
+    "to": "Pratik <pgc67990@gmail.com>",
+    "timestamp": 1777851131949
+  },
+  {
+    "id": "1fc14cbd-e8dd-4489-aae5-baa50f8ed584",
+    "type": "email_drafted",
+    "subject": "ALERT IMP READ IT",
+    "from": "Pratik <pgc67990@gmail.com>",
+    "preview": "CAN YOU REPLY ME I NEED HW HELP",
+    "timestamp": 1777851804393
+  },
+  {
+    "id": "b20bcfa8-9c21-4c4a-9bad-3847fc475622",
+    "type": "email_sent",
+    "subject": "ALERT IMP READ IT",
+    "to": "Pratik <pgc67990@gmail.com>",
+    "timestamp": 1777851830859
   }
 ]
