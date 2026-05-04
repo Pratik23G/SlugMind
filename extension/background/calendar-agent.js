@@ -65,7 +65,7 @@ export async function checkUpcomingEvents() {
   }
 }
 
-export async function checkCalendar() {
+export async function checkCalendarConflicts() {
   console.log('[SlugMind] checking calendar...');
   const token = await new Promise(res => chrome.identity.getAuthToken({ interactive: false }, res));
   if (!token) return;

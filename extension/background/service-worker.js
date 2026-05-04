@@ -1,7 +1,7 @@
 console.log('[SlugMind] service worker started');
 
 import { checkEmails, sendDraft } from './email-agent.js';
-import { checkCalendar, checkUpcomingEvents } from './calendar-agent.js';
+import { checkCalendarConflicts, checkUpcomingEvents } from './calendar-agent.js';
 import { runRedundancyCheck, approveReminder } from './redundancy-agent.js';
 import { startFocusTimer, stopFocusTimer, tickFocusTimer, addTask, updateTask } from './focus-agent.js';
 
@@ -61,7 +61,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   } else if (alarm.name === 'calendarCheck') {
     const { authToken } = await chrome.storage.local.get('authToken');
     if (!authToken) return;
-    await checkCalendar();
+    await checkCalendarConflicts();
+    await checkUpcomingEvents();
 
   } else if (alarm.name === 'reminderCheck') {
     const { authToken } = await chrome.storage.local.get('authToken');

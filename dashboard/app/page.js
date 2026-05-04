@@ -1,8 +1,24 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { EmailIcon, TimerIcon, ConflictIcon, CheckIcon, LogIcon, SlugMindLogo } from '../components/Icons'
 
-const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif"
+
+function IconFocus({ color = '#A855F7', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  )
+}
+
+function IconDefaultDot() {
+  return <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#374151' }} />
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getRelativeTime(ts) {
   const d = Date.now() - ts
@@ -38,7 +54,6 @@ function useCountUp(target) {
     const to = target
     prevRef.current = to
     if (from === to) return
-
     const start = performance.now()
     const dur = 600
     const animate = (now) => {
@@ -62,24 +77,37 @@ function LiveClock() {
     const id = setInterval(() => setTime(fmt()), 1000)
     return () => clearInterval(id)
   }, [])
-  return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{time}</span>
+  return <span style={{ fontVariantNumeric: 'tabular-nums', fontFamily: FONT }}>{time}</span>
 }
+
+// ── Skeleton ─────────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
   return (
-    <div style={{
-      background: '#0F1117',
-      border: '1px solid #1F2937',
-      borderLeft: '4px solid #1F2937',
-      borderRadius: 12,
-      padding: 20,
-    }}>
-      <div className="skeleton-shimmer" style={{ height: 24, width: 24, borderRadius: 6, marginBottom: 12 }} />
-      <div className="skeleton-shimmer" style={{ height: 36, width: '60%', borderRadius: 6, marginBottom: 8 }} />
-      <div className="skeleton-shimmer" style={{ height: 16, width: '80%', borderRadius: 6 }} />
+    <div style={{ background: '#0F1117', border: '1px solid #1F2937', borderLeft: '4px solid #1F2937', borderRadius: 12, padding: 20 }}>
+      <div className="skeleton-shimmer" style={{ height: 20, width: 20, borderRadius: 4, marginBottom: 14 }} />
+      <div className="skeleton-shimmer" style={{ height: 36, width: '55%', borderRadius: 6, marginBottom: 8 }} />
+      <div className="skeleton-shimmer" style={{ height: 14, width: '75%', borderRadius: 4 }} />
     </div>
   )
 }
+
+function SkeletonTable() {
+  return (
+    <div style={{ padding: '20px 24px' }}>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
+          <div className="skeleton-shimmer" style={{ width: 56, height: 13, borderRadius: 4, flexShrink: 0 }} />
+          <div className="skeleton-shimmer" style={{ width: 20, height: 20, borderRadius: 4, flexShrink: 0 }} />
+          <div className="skeleton-shimmer" style={{ flex: 1, height: 13, borderRadius: 4 }} />
+          <div className="skeleton-shimmer" style={{ width: 80, height: 13, borderRadius: 4, flexShrink: 0 }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, icon, borderColor, hoverColor, loading }) {
   const [hover, setHover] = useState(false)
@@ -100,14 +128,17 @@ function StatCard({ label, value, icon, borderColor, hoverColor, loading }) {
         padding: 20,
         transition: 'border-color 0.2s ease',
         cursor: 'default',
+        fontFamily: FONT,
       }}
     >
-      <div style={{ fontSize: 24, marginBottom: 10 }}>{icon}</div>
-      <div style={{ fontSize: 32, fontWeight: 700, color: '#fff', lineHeight: 1, marginBottom: 6 }}>{displayVal}</div>
-      <div style={{ fontSize: 14, color: '#9CA3AF' }}>{label}</div>
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center' }}>{icon}</div>
+      <div style={{ fontSize: 32, fontWeight: 700, color: '#fff', lineHeight: 1, marginBottom: 6, fontFamily: FONT }}>{displayVal}</div>
+      <div style={{ fontSize: 14, color: '#9CA3AF', fontFamily: FONT }}>{label}</div>
     </div>
   )
 }
+
+// ── Focus banner ──────────────────────────────────────────────────────────────
 
 function FocusBanner({ active, minutesRemaining, actionsCount }) {
   if (active) {
@@ -119,16 +150,17 @@ function FocusBanner({ active, minutesRemaining, actionsCount }) {
           border: '1.5px solid #7C3AED',
           borderLeft: '4px solid #7C3AED',
           borderRadius: 12,
-          padding: '16px 20px',
+          padding: '14px 20px',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
           color: '#E2E8F0',
           fontWeight: 500,
           fontSize: 14,
+          fontFamily: FONT,
         }}
       >
-        <span style={{ fontSize: 20 }}>🧠</span>
+        <IconFocus color="#A855F7" size={20} />
         <span>
           Focus mode active
           {minutesRemaining > 0 && <span style={{ color: '#A855F7' }}> · {minutesRemaining}m remaining</span>}
@@ -148,30 +180,36 @@ function FocusBanner({ active, minutesRemaining, actionsCount }) {
       gap: 10,
       color: '#6B7280',
       fontSize: 14,
+      fontFamily: FONT,
     }}>
-      <span style={{ fontSize: 18, opacity: 0.5 }}>🎯</span>
+      <IconFocus color="#374151" size={18} />
       No active focus session · Start one from the extension
     </div>
   )
 }
 
+// ── Activity table ────────────────────────────────────────────────────────────
+
 const TYPE_META = {
-  email_drafted:     { icon: '✉️',  color: '#7C3AED', label: 'Email drafted' },
-  email_sent:        { icon: '📨',  color: '#22C55E', label: 'Email sent' },
-  conflict_detected: { icon: '⚠️', color: '#F59E0B', label: 'Conflict detected' },
-  focus_started:     { icon: '⏱️',  color: '#7C3AED', label: 'Focus started' },
-  focus_ended:       { icon: '⏱️',  color: '#9CA3AF', label: 'Focus ended' },
-  task_completed:    { icon: '✅',  color: '#22C55E', label: 'Task completed' },
+  email_drafted:     { Icon: EmailIcon,    color: '#7C3AED', label: 'Email drafted' },
+  email_sent:        { Icon: EmailIcon,    color: '#22C55E', label: 'Email sent' },
+  conflict_detected: { Icon: ConflictIcon, color: '#F59E0B', label: 'Conflict detected' },
+  focus_started:     { Icon: TimerIcon,    color: '#3B82F6', label: 'Focus started' },
+  focus_ended:       { Icon: TimerIcon,    color: '#9CA3AF', label: 'Focus ended' },
+  task_completed:    { Icon: CheckIcon,    color: '#10B981', label: 'Task completed' },
 }
 
 function ActivityRow({ entry, isNew }) {
   const [hover, setHover] = useState(false)
-  const meta = TYPE_META[entry.type] || { icon: '⚡', color: '#F59E0B', label: entry.type }
+  const meta = TYPE_META[entry.type] || null
+  const label = meta ? meta.label : entry.type
+  const Icon = meta ? meta.Icon : null
+  const color = meta ? meta.color : null
   const desc = entry.subject
-    ? `${meta.label}: "${entry.subject}"`
+    ? `${label}: "${entry.subject}"`
     : entry.event1
     ? `${entry.event1} vs ${entry.event2}`
-    : meta.label
+    : label
 
   return (
     <tr
@@ -184,16 +222,18 @@ function ActivityRow({ entry, isNew }) {
         transition: 'background 0.12s',
       }}
     >
-      <td style={{ padding: '10px 16px', color: '#6B7280', fontSize: 12, whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '10px 16px', color: '#6B7280', fontSize: 12, whiteSpace: 'nowrap', fontFamily: FONT }}>
         {getRelativeTime(entry.timestamp)}
       </td>
-      <td style={{ padding: '10px 12px', fontSize: 18, lineHeight: 1 }}>
-        <span title={meta.label}>{meta.icon}</span>
+      <td style={{ padding: '10px 12px', width: 40 }}>
+        <span title={label} style={{ display: 'inline-flex', alignItems: 'center' }}>
+          {Icon ? <Icon color={color} size={16} /> : <IconDefaultDot />}
+        </span>
       </td>
-      <td style={{ padding: '10px 12px', color: '#E2E8F0', fontSize: 13 }}>{desc}</td>
+      <td style={{ padding: '10px 12px', color: '#E2E8F0', fontSize: 13, fontFamily: FONT }}>{desc}</td>
       <td style={{ padding: '10px 16px' }}>
         {entry.from && (
-          <span style={{ color: '#4B5563', fontSize: 11, maxWidth: 160, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ color: '#4B5563', fontSize: 11, maxWidth: 160, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT }}>
             {entry.from}
           </span>
         )}
@@ -202,77 +242,50 @@ function ActivityRow({ entry, isNew }) {
   )
 }
 
-function SkeletonTable() {
-  return (
-    <div style={{ padding: '20px 24px' }}>
-      {[0, 1, 2].map(i => (
-        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
-          <div className="skeleton-shimmer" style={{ width: 60, height: 14, borderRadius: 4, flexShrink: 0 }} />
-          <div className="skeleton-shimmer" style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0 }} />
-          <div className="skeleton-shimmer" style={{ flex: 1, height: 14, borderRadius: 4 }} />
-          <div className="skeleton-shimmer" style={{ width: 80, height: 14, borderRadius: 4, flexShrink: 0 }} />
-        </div>
-      ))}
-    </div>
-  )
-}
+// ── Empty state ───────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
     <div style={{ padding: '60px 24px', textAlign: 'center' }}>
-      <div className="slug-bounce" style={{ fontSize: 48, marginBottom: 16 }}>🐌</div>
-      <p style={{ color: '#6B7280', fontSize: 15, marginBottom: 6 }}>No actions yet</p>
-      <p style={{ color: '#374151', fontSize: 13 }}>
+      <div className="slug-bounce" style={{ display: 'inline-block', marginBottom: 20, opacity: 0.3 }}>
+        <SlugMindLogo size={48} />
+      </div>
+      <p style={{ color: '#6B7280', fontSize: 15, marginBottom: 6, fontFamily: FONT }}>No actions yet</p>
+      <p style={{ color: '#374151', fontSize: 13, fontFamily: FONT }}>
         Load the extension, connect Google, and SlugMind will start logging here.
       </p>
     </div>
   )
 }
 
+// ── Pagination ────────────────────────────────────────────────────────────────
+
 function Pagination({ page, totalPages, onPage }) {
   if (totalPages <= 1) return null
+  const btnBase = (disabled) => ({
+    padding: '6px 14px',
+    background: disabled ? '#1A1F2E' : '#1E293B',
+    border: '1px solid #2D3748',
+    borderRadius: 7,
+    color: disabled ? '#374151' : '#9CA3AF',
+    fontSize: 13,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    fontFamily: FONT,
+  })
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '12px 20px',
-      borderTop: '1px solid #1A1F2E',
-    }}>
-      <button
-        onClick={() => onPage(p => Math.max(0, p - 1))}
-        disabled={page === 0}
-        style={{
-          padding: '6px 14px',
-          background: page === 0 ? '#1A1F2E' : '#1E293B',
-          border: '1px solid #2D3748',
-          borderRadius: 7,
-          color: page === 0 ? '#374151' : '#9CA3AF',
-          fontSize: 13,
-          cursor: page === 0 ? 'not-allowed' : 'pointer',
-          fontFamily: FONT,
-        }}
-      >← Prev</button>
-      <span style={{ fontSize: 12, color: '#4B5563' }}>
-        Page {page + 1} of {totalPages}
-      </span>
-      <button
-        onClick={() => onPage(p => Math.min(totalPages - 1, p + 1))}
-        disabled={page >= totalPages - 1}
-        style={{
-          padding: '6px 14px',
-          background: page >= totalPages - 1 ? '#1A1F2E' : '#1E293B',
-          border: '1px solid #2D3748',
-          borderRadius: 7,
-          color: page >= totalPages - 1 ? '#374151' : '#9CA3AF',
-          fontSize: 13,
-          cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
-          fontFamily: FONT,
-        }}
-      >Next →</button>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid #1A1F2E' }}>
+      <button onClick={() => onPage(p => Math.max(0, p - 1))} disabled={page === 0} style={btnBase(page === 0)}>
+        ← Prev
+      </button>
+      <span style={{ fontSize: 12, color: '#4B5563', fontFamily: FONT }}>Page {page + 1} of {totalPages}</span>
+      <button onClick={() => onPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={btnBase(page >= totalPages - 1)}>
+        Next →
+      </button>
     </div>
   )
 }
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10
 
@@ -290,18 +303,15 @@ export default function DashboardPage() {
       if (!res.ok) return
       const data = await res.json()
       const incoming = data.activities || []
-
       const incomingIds = new Set(incoming.map(a => a.id))
       if (prevIdsRef.current.size > 0) {
         const added = [...incomingIds].filter(id => !prevIdsRef.current.has(id))
         if (added.length > 0) {
-          const s = new Set(added)
-          setNewIds(s)
+          setNewIds(new Set(added))
           setTimeout(() => setNewIds(new Set()), 700)
         }
       }
       prevIdsRef.current = incomingIds
-
       setActivities(incoming)
       setStats(data.stats || {})
     } catch {}
@@ -321,44 +331,34 @@ export default function DashboardPage() {
   const todayCount = activities.filter(a =>
     new Date(a.timestamp).toDateString() === new Date().toDateString()
   ).length
-
   const totalPages = Math.ceil(activities.length / PAGE_SIZE)
   const pageItems = activities.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: '32px 40px', maxWidth: 960, margin: '0 auto', fontFamily: FONT }}>
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#fff', margin: 0, marginBottom: 6 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#fff', margin: '0 0 6px', fontFamily: FONT }}>
             {getGreeting()}, Pratik
           </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6B7280' }}>
-            <span style={{ color: '#10B981', fontSize: 10 }}>●</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6B7280', fontFamily: FONT }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block', flexShrink: 0 }} />
             Live · updates every 10s
           </div>
         </div>
-        <div style={{
-          background: '#0F1117',
-          border: '1px solid #1F2937',
-          borderRadius: 10,
-          padding: '8px 14px',
-          fontSize: 15,
-          fontWeight: 600,
-          color: '#9CA3AF',
-          letterSpacing: '0.5px',
-          fontVariantNumeric: 'tabular-nums',
-        }}>
+        <div style={{ background: '#0F1117', border: '1px solid #1F2937', borderRadius: 10, padding: '8px 14px', fontSize: 15, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.5px' }}>
           <LiveClock />
         </div>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard label="Emails drafted" value={stats.emailsDrafted} icon="✉️" borderColor="#7C3AED" hoverColor="#A855F7" loading={loading} />
-        <StatCard label="Conflicts caught" value={stats.conflictsCaught} icon="⚠️" borderColor="#F59E0B" hoverColor="#FCD34D" loading={loading} />
-        <StatCard label="Tasks completed" value={stats.tasksCompleted} icon="✅" borderColor="#10B981" hoverColor="#34D399" loading={loading} />
-        <StatCard label="Focus time" value={formatFocusTime(stats.focusMinutes)} icon="⏱️" borderColor="#3B82F6" hoverColor="#60A5FA" loading={loading} />
+        <StatCard label="Emails drafted"   value={stats.emailsDrafted}   icon={<EmailIcon    size={20} />}               borderColor="#7C3AED" hoverColor="#A855F7" loading={loading} />
+        <StatCard label="Conflicts caught" value={stats.conflictsCaught} icon={<ConflictIcon size={20} />}               borderColor="#F59E0B" hoverColor="#FCD34D" loading={loading} />
+        <StatCard label="Tasks completed"  value={stats.tasksCompleted}  icon={<CheckIcon    size={20} />}               borderColor="#10B981" hoverColor="#34D399" loading={loading} />
+        <StatCard label="Focus time"       value={formatFocusTime(stats.focusMinutes)} icon={<TimerIcon size={20} />}    borderColor="#3B82F6" hoverColor="#60A5FA" loading={loading} />
       </div>
 
       {/* Focus banner */}
@@ -367,24 +367,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Action log */}
-      <div style={{
-        background: '#0F1117',
-        border: '1px solid #1F2937',
-        borderRadius: 12,
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          padding: '16px 20px',
-          borderBottom: '1px solid #1A1F2E',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          <span style={{ fontSize: 16 }}>📋</span>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#fff' }}>Action Log</h2>
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#4B5563' }}>
-            {activities.length} entries
-          </span>
+      <div style={{ background: '#0F1117', border: '1px solid #1F2937', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid #1A1F2E', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LogIcon color="#6B7280" size={18} />
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#fff', fontFamily: FONT }}>Action Log</h2>
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: '#4B5563', fontFamily: FONT }}>{activities.length} entries</span>
         </div>
 
         {loading ? (
@@ -396,19 +383,15 @@ export default function DashboardPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #1A1F2E' }}>
-                  <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Time</th>
-                  <th style={{ padding: '8px 12px', width: 44 }} />
-                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Action</th>
-                  <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>From</th>
+                  <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>Time</th>
+                  <th style={{ padding: '8px 12px', width: 40 }} />
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>Action</th>
+                  <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: FONT }}>From</th>
                 </tr>
               </thead>
               <tbody>
                 {pageItems.map((entry, i) => (
-                  <ActivityRow
-                    key={entry.id}
-                    entry={{ ...entry, _alt: i % 2 === 1 }}
-                    isNew={newIds.has(entry.id)}
-                  />
+                  <ActivityRow key={entry.id} entry={{ ...entry, _alt: i % 2 === 1 }} isNew={newIds.has(entry.id)} />
                 ))}
               </tbody>
             </table>
