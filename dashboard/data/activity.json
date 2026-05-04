@@ -181,5 +181,133 @@
     "subject": "ALERT IMP READ IT",
     "to": "Pratik <pgc67990@gmail.com>",
     "timestamp": 1777851830859
+  },
+  {
+    "id": "db7a5362-5a1d-4053-a6c7-dc1b47cedaf4",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874467586
+  },
+  {
+    "id": "56d32ffb-d56a-4f4f-976d-a6e10950ad9b",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874469035
+  },
+  {
+    "id": "5f470e84-1070-4256-9901-9d6a4b63591e",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874470790
+  },
+  {
+    "id": "16403566-bd96-426a-9a45-73d090bead9e",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874471159
+  },
+  {
+    "id": "e92a727b-5ed1-47b5-bdaf-0ce38f869fa4",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874472427
+  },
+  {
+    "id": "7748b884-e0f5-495b-8b15-4c837018c29c",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874475311
+  },
+  {
+    "id": "75fbb10b-8ae1-4130-a810-1a5baece681d",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874476457
+  },
+  {
+    "id": "798c77bb-cf2c-4285-a36d-3f60a6e06b64",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874581929
+  },
+  {
+    "id": "4bf8764a-6cc7-4093-85eb-8d075aa1abde",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874583834
+  },
+  {
+    "id": "4c2d104f-2545-4948-a4db-1350d7cb3374",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777874595405
+  },
+  {
+    "id": "5f5c1dcb-3f6f-4136-b114-3d6ca7fe13dd",
+    "type": "email_drafted",
+    "subject": "PIE AMERICAN PIE",
+    "from": "Pratik Gurung <pratikgurung022@gmail.com>",
+    "preview": "Hi Pratik, I hope you are doing well. Listen, man you got this and you well get the job at PickAxe j",
+    "timestamp": 1777874767324
+  },
+  {
+    "id": "98060585-44ef-41d4-a485-7e693fe19806",
+    "type": "email_sent",
+    "subject": "PIE AMERICAN PIE",
+    "to": "Pratik Gurung <pratikgurung022@gmail.com>",
+    "timestamp": 1777874896438
+  },
+  {
+    "id": "2c96285e-5cec-4e01-a64a-65d54fdd3ea5",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777875808587
+  },
+  {
+    "id": "095ecda8-92d6-45d1-a709-78ecd3d6f215",
+    "type": "focus_ended",
+    "duration": 0,
+    "actionsCount": 0,
+    "timestamp": 1777875819402
+  },
+  {
+    "id": "c4275134-4e61-46c1-b35e-0bcc18869108",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777883275670
+  },
+  {
+    "id": "78008f3e-ad97-45f7-b299-93f98070a5c8",
+    "type": "focus_ended",
+    "duration": 0,
+    "actionsCount": 0,
+    "timestamp": 1777883276883
+  },
+  {
+    "id": "8c2ed166-2992-4c26-9f2a-0cafc7cd8838",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777883421931
+  },
+  {
+    "id": "a506ad5d-d827-4e3d-a5f9-2dd9c6a70ba1",
+    "type": "focus_started",
+    "duration": 25,
+    "timestamp": 1777883483303
+  },
+  {
+    "id": "ff9ddd0c-a0fa-4a84-8a68-e553f048bb87",
+    "type": "conflict_detected",
+    "event1": "pratik gurung's Zoom Meeting",
+    "event2": "pratik gurung's Zoom Meeting",
+    "conflictType": "near",
+    "timestamp": 1777883768683
+  },
+  {
+    "id": "370c176d-e49f-43c9-a156-20aaff09949c",
+    "type": "focus_ended",
+    "duration": 26,
+    "actionsCount": 0,
+    "timestamp": 1777885025360
   }
 ]

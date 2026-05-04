@@ -15,16 +15,66 @@ const NAV = [
 export default function Sidebar() {
   const pathname = usePathname()
   const [email, setEmail] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem('slugmind_settings') || '{}')
       setEmail(s.userEmail || '')
     } catch {}
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Mobile bottom nav
+  if (isMobile) {
+    return (
+      <nav className="bottom-nav" style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 60,
+        background: '#0A0B14',
+        borderTop: '0.5px solid #1F2937',
+        display: 'flex',
+        zIndex: 1000,
+        fontFamily: FONT,
+      }}>
+        {NAV.map(({ href, label, Icon }) => {
+          const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+                textDecoration: 'none',
+                color: active ? '#A855F7' : '#6B7280',
+                minHeight: 44,
+              }}
+            >
+              <Icon color={active ? '#A855F7' : '#6B7280'} size={20} />
+              <span style={{ fontSize: 11, fontWeight: active ? 600 : 400, fontFamily: FONT }}>
+                {label}
+              </span>
+            </Link>
+          )
+        })}
+      </nav>
+    )
+  }
+
+  // Desktop sidebar
   return (
-    <aside style={{
+    <aside className="sidebar-desktop" style={{
       width: 240,
       position: 'fixed',
       top: 0,
@@ -75,6 +125,7 @@ export default function Sidebar() {
                 background: active ? 'rgba(124,58,237,0.1)' : 'transparent',
                 color: active ? '#A855F7' : '#9CA3AF',
                 transition: 'background 0.15s, color 0.15s',
+                minHeight: 44,
               }}
             >
               <Icon color={iconColor} />
