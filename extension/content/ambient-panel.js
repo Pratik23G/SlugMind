@@ -2,12 +2,12 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
 
 (function () {
   'use strict';
+  if (location.protocol === 'chrome:') return;
   if (window.__slugmindLoaded) return;
   window.__slugmindLoaded = true;
 
   const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif";
 
-  // ── Emoji icon map (replaces Phosphor) ────────────────────────────────────
   const EMOJI = {
     'ph-envelope':         '✉️',
     'ph-warning':          '⚠️',
@@ -25,11 +25,8 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
     'ph-pencil-simple':    '✏️',
   };
 
-  function ph(icon) {
-    return EMOJI[icon] || '·';
-  }
+  function ph(icon) { return EMOJI[icon] || '·'; }
 
-  // ── Inject CSS (no external font/Phosphor links) ───────────────────────────
   function injectCSS() {
     if (document.getElementById('slugmind-css')) return;
     const s = document.createElement('style');
@@ -79,72 +76,29 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
         font-family: ${FONT};
       }
       .sm-close:hover { color: #94a3b8; }
-      .sm-divider {
-        text-align: center;
-        font-size: 11px;
-        font-weight: 600;
-        margin: 5px 0;
-      }
-      .sm-event-block {
-        background: #1e293b;
-        border-radius: 8px;
-        padding: 9px 11px;
-        margin-bottom: 5px;
-      }
+      .sm-divider { text-align: center; font-size: 11px; font-weight: 600; margin: 5px 0; }
+      .sm-event-block { background: #1e293b; border-radius: 8px; padding: 9px 11px; margin-bottom: 5px; }
       .sm-event-name { font-weight: 600; font-size: 13px; color: #e2e8f0; }
       .sm-event-time { font-size: 11px; color: #94a3b8; margin-top: 2px; }
       .sm-draft-box {
-        background: #1e293b;
-        border-radius: 8px;
-        padding: 10px;
-        font-size: 12px;
-        color: #cbd5e1;
-        line-height: 1.6;
-        max-height: 90px;
-        overflow-y: auto;
-        white-space: pre-wrap;
-        word-break: break-word;
+        background: #1e293b; border-radius: 8px; padding: 10px; font-size: 12px;
+        color: #cbd5e1; line-height: 1.6; max-height: 90px; overflow-y: auto;
+        white-space: pre-wrap; word-break: break-word;
       }
       .sm-draft-area {
-        width: 100%;
-        background: #1e293b;
-        border: 1.5px solid #6366f1;
-        border-radius: 8px;
-        padding: 10px;
-        font-size: 12px;
-        color: #e2e8f0;
-        line-height: 1.6;
-        resize: vertical;
-        min-height: 72px;
-        font-family: ${FONT};
+        width: 100%; background: #1e293b; border: 1.5px solid #6366f1;
+        border-radius: 8px; padding: 10px; font-size: 12px; color: #e2e8f0;
+        line-height: 1.6; resize: vertical; min-height: 72px; font-family: ${FONT};
       }
       .sm-section-label {
-        font-size: 11px;
-        font-weight: 600;
-        color: #7c3aed;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 10px 0 6px;
+        font-size: 11px; font-weight: 600; color: #7c3aed;
+        text-transform: uppercase; letter-spacing: 0.5px; margin: 10px 0 6px;
       }
-      .sm-actions {
-        display: flex;
-        gap: 7px;
-        flex-wrap: wrap;
-        margin-top: 12px;
-      }
+      .sm-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
       .sm-btn {
-        padding: 7px 13px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-        font-family: ${FONT};
-        transition: opacity 0.15s, background 0.15s;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        border: none;
-        white-space: nowrap;
+        padding: 7px 13px; border-radius: 8px; cursor: pointer; font-size: 12px;
+        font-weight: 600; font-family: ${FONT}; transition: opacity 0.15s, background 0.15s;
+        display: inline-flex; align-items: center; gap: 5px; border: none; white-space: nowrap;
       }
       .sm-btn:hover { opacity: 0.82; }
       .sm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -153,37 +107,174 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       .sm-btn-muted   { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
       .sm-btn-ghost   { background: transparent; color: #64748b; border: 1px solid #2d3748; }
       .sm-alt-option {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 10px;
-        background: #1e293b;
-        border-radius: 8px;
-        margin-bottom: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        color: #e2e8f0;
-        border: 1.5px solid transparent;
-        transition: border-color 0.15s;
+        display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+        background: #1e293b; border-radius: 8px; margin-bottom: 4px; cursor: pointer;
+        font-size: 12px; color: #e2e8f0; border: 1.5px solid transparent; transition: border-color 0.15s;
       }
       .sm-alt-option:has(input:checked) { border-color: #7c3aed; }
       .sm-alt-option input { accent-color: #7c3aed; }
       .sm-overflow {
-        pointer-events: all;
-        align-self: flex-end;
-        background: #7c3aed;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 4px 14px;
-        border-radius: 999px 0 0 999px;
-        cursor: pointer;
-        font-family: ${FONT};
-        border: none;
-        margin-right: 0;
-        transition: background 0.15s;
+        pointer-events: all; align-self: flex-end; background: #7c3aed; color: #fff;
+        font-size: 11px; font-weight: 600; padding: 4px 14px;
+        border-radius: 999px 0 0 999px; cursor: pointer; font-family: ${FONT};
+        border: none; margin-right: 0; transition: background 0.15s;
       }
       .sm-overflow:hover { background: #6d28d9; }
+
+      /* ── Floating button ──────────────────────────────────────────────────── */
+      #sm-float-btn {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #7C3AED;
+        z-index: 2147483646;
+        cursor: pointer;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: #fff;
+        box-shadow: 0 4px 24px rgba(124,58,237,0.5);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        font-family: ${FONT};
+        outline: none;
+        padding: 0;
+      }
+      #sm-float-btn:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 28px rgba(124,58,237,0.75);
+      }
+      #sm-float-btn.focus-active {
+        animation: smBtnPulse 2s ease-in-out infinite;
+      }
+      @keyframes smBtnPulse {
+        0%, 100% { box-shadow: 0 4px 24px rgba(124,58,237,0.5); }
+        50% { box-shadow: 0 0 0 10px rgba(124,58,237,0), 0 4px 24px rgba(124,58,237,0.5); }
+      }
+      #sm-float-badge {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        background: #EF4444;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        border: 2px solid #7C3AED;
+        font-family: ${FONT};
+        line-height: 1;
+      }
+      #sm-float-badge.visible { display: flex; }
+
+      /* ── Expandable panel ─────────────────────────────────────────────────── */
+      #sm-float-panel {
+        position: fixed;
+        bottom: 86px;
+        right: 24px;
+        width: 320px;
+        max-height: 520px;
+        background: #0F1117;
+        border: 1.5px solid #7C3AED;
+        border-radius: 16px;
+        z-index: 2147483646;
+        overflow-y: auto;
+        display: none;
+        flex-direction: column;
+        box-shadow: 0 8px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(124,58,237,0.15);
+        font-family: ${FONT};
+        color: #F1F5F9;
+        font-size: 14px;
+        scrollbar-width: thin;
+        scrollbar-color: #374151 transparent;
+      }
+      #sm-float-panel::-webkit-scrollbar { width: 4px; }
+      #sm-float-panel::-webkit-scrollbar-track { background: transparent; }
+      #sm-float-panel::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+      #sm-float-panel.open {
+        display: flex;
+        animation: smSlideUp 0.22s cubic-bezier(.16,1,.3,1) forwards;
+      }
+      @keyframes smSlideUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .sm-fp-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px 12px;
+        flex-shrink: 0;
+      }
+      .sm-fp-logo { display: flex; align-items: center; gap: 7px; }
+      .sm-fp-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 10px 16px 12px;
+        flex-shrink: 0;
+      }
+      .sm-fp-stat { text-align: center; padding: 4px 0; }
+      .sm-fp-stat-border { border-left: 1px solid #1F2937; }
+      .sm-fp-stat-val { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.2; }
+      .sm-fp-stat-lbl { font-size: 11px; color: #6B7280; margin-top: 2px; }
+      .sm-fp-divider { height: 1px; background: #1F2937; flex-shrink: 0; }
+      .sm-fp-section { padding: 12px 16px; flex-shrink: 0; }
+      .sm-fp-section-label {
+        font-size: 10px; font-weight: 700; color: #7C3AED;
+        text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px;
+      }
+      .sm-fp-presets { display: flex; gap: 6px; margin-bottom: 8px; }
+      .sm-fp-preset {
+        flex: 1; padding: 6px 8px; border-radius: 8px;
+        border: 1.5px solid #374151; background: #1E293B; color: #94A3B8;
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        transition: all 0.15s; font-family: ${FONT};
+      }
+      .sm-fp-preset:hover { border-color: #7C3AED; color: #E2E8F0; }
+      .sm-fp-preset.active { border-color: #7C3AED; background: rgba(124,58,237,0.15); color: #A855F7; }
+      .sm-fp-focus-btn {
+        width: 100%; margin-top: 8px; padding: 8px;
+        background: #7C3AED; color: #fff; border: none; border-radius: 8px;
+        font-size: 13px; font-weight: 600; cursor: pointer; font-family: ${FONT};
+        transition: background 0.15s;
+      }
+      .sm-fp-focus-btn:hover { background: #6D28D9; }
+      .sm-fp-focus-btn.stop { background: #1E293B; color: #EF4444; border: 1.5px solid #EF4444; }
+      .sm-fp-focus-btn.stop:hover { background: rgba(239,68,68,0.1); }
+      .sm-fp-section.focus-pulsing {
+        border: 1.5px solid #7C3AED;
+        border-radius: 12px;
+        animation: smFocusBorder 2s ease-in-out infinite;
+      }
+      @keyframes smFocusBorder {
+        0%, 100% { border-color: #7C3AED; }
+        50% { border-color: #A855F7; box-shadow: 0 0 12px rgba(124,58,237,0.25); }
+      }
+      .sm-fp-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px 14px;
+        border-top: 1px solid #1F2937;
+        flex-shrink: 0;
+      }
+      .sm-fp-footer-link {
+        font-size: 12px; color: #7C3AED; text-decoration: none; font-weight: 500;
+      }
+      .sm-fp-footer-link:hover { text-decoration: underline; }
+      .sm-fp-kb-hint {
+        font-size: 10px; color: #4B5563; background: #1E293B;
+        padding: 2px 6px; border-radius: 4px; border: 1px solid #374151;
+      }
     `;
     document.head.appendChild(s);
   }
@@ -198,7 +289,14 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
     return `${dayPart} · ${timePart}`;
   }
 
-  // ── AmbientPanel ────────────────────────────────────────────────────────────
+  function fmtMins(minutes) {
+    if (!minutes) return '0m';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+
+  // ── AmbientPanel (alert panels that slide from the right) ────────────────────
   class AmbientPanel {
     constructor() {
       this.active = [];
@@ -227,6 +325,7 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       if (this.active.length >= this.MAX) {
         this.queue.push(cfg);
         this._refreshOverflow();
+        this._updateBadge();
         return;
       }
       this._mount(cfg);
@@ -243,6 +342,7 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
         panel.style.transform = 'translateX(0)';
         panel.style.opacity = '1';
       }));
+      this._updateBadge();
     }
 
     dismiss(panel) {
@@ -254,10 +354,16 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
         this.active = this.active.filter(p => p !== panel);
         if (this.queue.length > 0) this._mount(this.queue.shift());
         this._refreshOverflow();
+        this._updateBadge();
         if (this.active.length === 0 && this.queue.length === 0) {
           try { chrome.runtime.sendMessage({ type: 'CLEAR_BADGE' }); } catch {}
         }
       }, 220);
+    }
+
+    _updateBadge() {
+      const count = this.active.length + this.queue.length;
+      if (window.slugmindFloating) window.slugmindFloating.updateBadge(count);
     }
 
     _refreshOverflow() {
@@ -323,7 +429,6 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       return r;
     }
 
-    // ── Email panel ────────────────────────────────────────────────────────
     _email(cfg) {
       const panel = this._shell('#6366f1');
       panel.appendChild(this._header('ph-envelope', 'New email', '#a5b4fc', panel));
@@ -380,13 +485,10 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
         sendBtn.disabled = true;
         sendBtn.textContent = 'Sending…';
         chrome.runtime.sendMessage({
-          type:      'SEND_DRAFT',
-          emailId:   cfg.emailId,
-          messageId: cfg.messageId,
-          threadId:  cfg.threadId,
-          to:        cfg.to,
-          subject:   cfg.subject,
-          draftText: body,
+          type: 'SEND_DRAFT',
+          emailId: cfg.emailId, messageId: cfg.messageId,
+          threadId: cfg.threadId, to: cfg.to,
+          subject: cfg.subject, draftText: body,
         }, (resp) => {
           if (resp?.ok) {
             sendBtn.textContent = '✅ Sent!';
@@ -411,15 +513,11 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
         }
       });
 
-      const dismissBtn = this._btn(`${ph('ph-x')} Ignore`, 'sm-btn-ghost', () => {
-        this.dismiss(panel);
-      });
-
+      const dismissBtn = this._btn(`${ph('ph-x')} Ignore`, 'sm-btn-ghost', () => this.dismiss(panel));
       panel.appendChild(this._actions(sendBtn, editBtn, dismissBtn));
       return panel;
     }
 
-    // ── Conflict panel ─────────────────────────────────────────────────────
     _conflict(cfg) {
       const panel = this._shell('#ef4444');
       panel.appendChild(this._header('ph-warning', 'Schedule Conflict', '#fca5a5', panel));
@@ -492,7 +590,6 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       });
 
       const ignoreBtn = this._btn(`${ph('ph-x')} Ignore`, 'sm-btn-ghost', () => this.dismiss(panel));
-
       panel.appendChild(this._actions(reschedBtn, emailBtn, ignoreBtn));
       return panel;
     }
@@ -504,7 +601,6 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       label.className = 'sm-section-label';
       label.textContent = alts.length ? 'Pick a time:' : 'No alternatives found.';
       section.appendChild(label);
-
       if (!alts.length) return;
 
       const name = `sm-alt-${Date.now()}`;
@@ -544,12 +640,10 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       label.className = 'sm-section-label';
       label.textContent = 'Email Draft';
       section.appendChild(label);
-
       const area = document.createElement('textarea');
       area.className = 'sm-draft-area';
       area.value = draft;
       section.appendChild(area);
-
       const sendBtn = this._btn(`${ph('ph-paper-plane-tilt')} Send`, 'sm-btn-success', () => {
         try {
           chrome.runtime.sendMessage({
@@ -565,7 +659,6 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       section.appendChild(sendBtn);
     }
 
-    // ── Reminder panel ─────────────────────────────────────────────────────
     _reminder(cfg) {
       const ev = cfg.event || {};
       const panel = this._shell('#f59e0b');
@@ -582,24 +675,20 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       panel.appendChild(time);
 
       const btns = [];
-
       if (ev.meetLink) {
         btns.push(this._btn(`${ph('ph-video-camera')} Join Meeting`, 'sm-btn-primary', () => {
           window.open(ev.meetLink, '_blank');
           this.dismiss(panel);
         }));
       }
-
       btns.push(this._btn(`${ph('ph-alarm')} Snooze 5 min`, 'sm-btn-muted', () => {
         this.dismiss(panel);
         setTimeout(() => this.show({ ...cfg }), 5 * 60 * 1000);
       }));
-
       btns.push(this._btn(`${ph('ph-x')} Dismiss`, 'sm-btn-ghost', () => {
         try { chrome.runtime.sendMessage({ type: 'MARK_REMINDER_DISMISSED', eventId: ev.id }); } catch {}
         this.dismiss(panel);
       }));
-
       panel.appendChild(this._actions(...btns));
       return panel;
     }
@@ -620,8 +709,492 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
     }
   }
 
-  // ── Init + message listener ─────────────────────────────────────────────────
-  window.slugmindPanel = new AmbientPanel();
+  // ── FloatingWidget ───────────────────────────────────────────────────────────
+  class FloatingWidget {
+    constructor(panelRef) {
+      this.panelRef = panelRef;
+      this.isOpen = false;
+      this._btn = null;
+      this._badge = null;
+      this._panel = null;
+      this._countdownInterval = null;
+      this._selectedMins = 25;
+      this._focusActive = false;
+      this._build();
+      this._listenOutside();
+      this._listenKeyboard();
+      this._initFocusState();
+      this._restoreOpenState();
+    }
+
+    _build() {
+      this._buildBtn();
+      this._buildPanel();
+    }
+
+    _buildBtn() {
+      const btn = document.createElement('button');
+      btn.id = 'sm-float-btn';
+      btn.title = 'SlugMind (Ctrl+Shift+S)';
+      btn.textContent = '⊙';
+
+      const badge = document.createElement('span');
+      badge.id = 'sm-float-badge';
+      btn.appendChild(badge);
+      this._badge = badge;
+
+      btn.addEventListener('click', e => { e.stopPropagation(); this._toggle(); });
+      document.body.appendChild(btn);
+      this._btn = btn;
+    }
+
+    _buildPanel() {
+      const panel = document.createElement('div');
+      panel.id = 'sm-float-panel';
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'sm-fp-header';
+
+      const logo = document.createElement('div');
+      logo.className = 'sm-fp-logo';
+      const spiral = document.createElement('span');
+      spiral.textContent = '⊙';
+      spiral.style.cssText = 'font-size:18px;color:#7C3AED;line-height:1;';
+      const name = document.createElement('span');
+      name.textContent = 'SlugMind';
+      name.style.cssText = 'font-weight:700;color:#fff;font-size:14px;';
+      const dot = document.createElement('span');
+      dot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:#10B981;display:inline-block;flex-shrink:0;';
+      logo.appendChild(spiral); logo.appendChild(name); logo.appendChild(dot);
+
+      const headerRight = document.createElement('div');
+      headerRight.style.cssText = 'display:flex;align-items:center;gap:7px;';
+      const pendingBadge = document.createElement('span');
+      pendingBadge.id = 'sm-fp-pending-badge';
+      pendingBadge.style.cssText = 'display:none;background:#7C3AED;color:#fff;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;';
+      const minimizeBtn = document.createElement('button');
+      minimizeBtn.textContent = '−';
+      minimizeBtn.style.cssText = `background:none;border:none;color:#6B7280;cursor:pointer;font-size:20px;line-height:1;padding:0;font-family:${FONT};`;
+      minimizeBtn.addEventListener('click', e => { e.stopPropagation(); this._close(); });
+      headerRight.appendChild(pendingBadge); headerRight.appendChild(minimizeBtn);
+      header.appendChild(logo); header.appendChild(headerRight);
+      panel.appendChild(header);
+
+      // Divider
+      panel.appendChild(this._mkDivider());
+
+      // Stats row
+      const statsRow = document.createElement('div');
+      statsRow.className = 'sm-fp-stats';
+      const emailStat = this._mkStat('sm-fp-stat-emails', '—', 'Emails drafted');
+      const focusStat = this._mkStat('sm-fp-stat-focus', '—', 'Focus today');
+      focusStat.classList.add('sm-fp-stat-border');
+      statsRow.appendChild(emailStat);
+      statsRow.appendChild(focusStat);
+      panel.appendChild(statsRow);
+
+      panel.appendChild(this._mkDivider());
+
+      // Focus timer section
+      const focusSection = document.createElement('div');
+      focusSection.className = 'sm-fp-section';
+      focusSection.id = 'sm-fp-focus-section';
+      this._buildFocusSection(focusSection);
+      panel.appendChild(focusSection);
+
+      panel.appendChild(this._mkDivider());
+
+      // Tasks section
+      const tasksSection = document.createElement('div');
+      tasksSection.className = 'sm-fp-section';
+      this._buildTasksSection(tasksSection);
+      panel.appendChild(tasksSection);
+
+      panel.appendChild(this._mkDivider());
+
+      // Upcoming section
+      const upcomingSection = document.createElement('div');
+      upcomingSection.className = 'sm-fp-section';
+      this._buildUpcomingSection(upcomingSection);
+      panel.appendChild(upcomingSection);
+
+      // Footer
+      const footer = document.createElement('div');
+      footer.className = 'sm-fp-footer';
+      const dashLink = document.createElement('a');
+      dashLink.className = 'sm-fp-footer-link';
+      dashLink.textContent = 'Open Dashboard →';
+      dashLink.target = '_blank';
+      dashLink.rel = 'noopener';
+      try {
+        chrome.storage.sync.get('dashboardUrl', d => {
+          dashLink.href = d.dashboardUrl || 'https://slug-mind.vercel.app';
+        });
+      } catch { dashLink.href = '#'; }
+      const kbHint = document.createElement('span');
+      kbHint.className = 'sm-fp-kb-hint';
+      kbHint.textContent = 'Ctrl+Shift+S';
+      footer.appendChild(dashLink);
+      footer.appendChild(kbHint);
+      panel.appendChild(footer);
+
+      document.body.appendChild(panel);
+      this._panel = panel;
+    }
+
+    _mkStat(id, val, lbl) {
+      const div = document.createElement('div');
+      div.className = 'sm-fp-stat';
+      const v = document.createElement('div');
+      v.className = 'sm-fp-stat-val';
+      v.id = id;
+      v.textContent = val;
+      const l = document.createElement('div');
+      l.className = 'sm-fp-stat-lbl';
+      l.textContent = lbl;
+      div.appendChild(v); div.appendChild(l);
+      return div;
+    }
+
+    _buildFocusSection(container) {
+      container.innerHTML = '';
+      const label = document.createElement('div');
+      label.className = 'sm-fp-section-label';
+      label.textContent = 'Focus Timer';
+      container.appendChild(label);
+
+      const presetRow = document.createElement('div');
+      presetRow.className = 'sm-fp-presets';
+      [{ m: 25, t: '25m' }, { m: 45, t: '45m' }, { m: 0, t: 'Custom' }].forEach(({ m, t }) => {
+        const btn = document.createElement('button');
+        btn.className = 'sm-fp-preset' + (m === this._selectedMins ? ' active' : '');
+        btn.textContent = t;
+        btn.dataset.mins = m;
+        btn.addEventListener('click', () => {
+          presetRow.querySelectorAll('.sm-fp-preset').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this._selectedMins = m;
+          customWrap.style.display = m === 0 ? 'block' : 'none';
+        });
+        presetRow.appendChild(btn);
+      });
+      container.appendChild(presetRow);
+
+      const customWrap = document.createElement('div');
+      customWrap.style.cssText = 'display:none;margin-bottom:6px;';
+      const customInput = document.createElement('input');
+      customInput.type = 'number';
+      customInput.placeholder = 'minutes';
+      customInput.min = 1; customInput.max = 240;
+      customInput.id = 'sm-fp-custom-mins';
+      customInput.style.cssText = `width:100%;background:#1E293B;border:1.5px solid #374151;border-radius:8px;padding:7px 10px;color:#fff;font-size:13px;outline:none;font-family:${FONT};box-sizing:border-box;`;
+      customWrap.appendChild(customInput);
+      container.appendChild(customWrap);
+
+      const countdownEl = document.createElement('div');
+      countdownEl.id = 'sm-fp-countdown';
+      countdownEl.style.cssText = 'display:none;text-align:center;font-size:24px;font-weight:700;color:#A855F7;padding:8px 0 4px;letter-spacing:1px;font-variant-numeric:tabular-nums;';
+      container.appendChild(countdownEl);
+
+      const focusBtn = document.createElement('button');
+      focusBtn.id = 'sm-fp-focus-btn';
+      focusBtn.className = 'sm-fp-focus-btn' + (this._focusActive ? ' stop' : '');
+      focusBtn.textContent = this._focusActive ? 'Stop Focus' : 'Start Focus';
+      focusBtn.addEventListener('click', () => {
+        if (this._focusActive) {
+          try { chrome.runtime.sendMessage({ type: 'FOCUS_STOP' }); } catch {}
+        } else {
+          let mins = this._selectedMins;
+          if (mins === 0) {
+            const inp = document.getElementById('sm-fp-custom-mins');
+            mins = parseInt(inp?.value) || 25;
+          }
+          try { chrome.runtime.sendMessage({ type: 'FOCUS_START', duration: mins }); } catch {}
+        }
+      });
+      container.appendChild(focusBtn);
+    }
+
+    _buildTasksSection(container) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
+      const label = document.createElement('div');
+      label.className = 'sm-fp-section-label';
+      label.style.margin = '0';
+      label.textContent = 'Tasks';
+      const viewAll = document.createElement('a');
+      viewAll.style.cssText = 'font-size:11px;color:#7C3AED;text-decoration:none;font-weight:500;';
+      viewAll.textContent = 'View all →';
+      viewAll.target = '_blank'; viewAll.rel = 'noopener';
+      viewAll.onmouseover = () => viewAll.style.textDecoration = 'underline';
+      viewAll.onmouseout  = () => viewAll.style.textDecoration = 'none';
+      try {
+        chrome.storage.sync.get('dashboardUrl', d => {
+          viewAll.href = d.dashboardUrl || 'https://slug-mind.vercel.app';
+        });
+      } catch { viewAll.href = '#'; }
+      sectionHeader.appendChild(label); sectionHeader.appendChild(viewAll);
+      container.appendChild(sectionHeader);
+
+      const tasksList = document.createElement('div');
+      tasksList.id = 'sm-fp-tasks-list';
+      container.appendChild(tasksList);
+
+      const quickAdd = document.createElement('div');
+      quickAdd.style.cssText = 'display:flex;gap:6px;margin-top:8px;';
+      const taskInput = document.createElement('input');
+      taskInput.type = 'text';
+      taskInput.id = 'sm-fp-task-input';
+      taskInput.placeholder = 'Add a task...';
+      taskInput.style.cssText = `flex:1;background:#1E293B;border:1.5px solid #374151;border-radius:8px;padding:7px 10px;color:#fff;font-size:12px;outline:none;font-family:${FONT};`;
+      taskInput.addEventListener('keydown', e => { if (e.key === 'Enter') this._addTask(taskInput.value); });
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '+';
+      addBtn.style.cssText = 'background:#7C3AED;color:#fff;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+      addBtn.addEventListener('click', () => this._addTask(taskInput.value));
+      quickAdd.appendChild(taskInput); quickAdd.appendChild(addBtn);
+      container.appendChild(quickAdd);
+    }
+
+    _buildUpcomingSection(container) {
+      const label = document.createElement('div');
+      label.className = 'sm-fp-section-label';
+      label.textContent = 'Upcoming';
+      container.appendChild(label);
+      const list = document.createElement('div');
+      list.id = 'sm-fp-events-list';
+      container.appendChild(list);
+    }
+
+    _mkDivider() {
+      const d = document.createElement('div');
+      d.className = 'sm-fp-divider';
+      return d;
+    }
+
+    _toggle() {
+      if (this.isOpen) this._close();
+      else this._open();
+    }
+
+    _open() {
+      this.isOpen = true;
+      this._panel.classList.add('open');
+      this._loadData();
+      try { chrome.storage.session.set({ smPanelOpen: true }); } catch {}
+    }
+
+    _close() {
+      this.isOpen = false;
+      this._panel.classList.remove('open');
+      try { chrome.storage.session.set({ smPanelOpen: false }); } catch {}
+    }
+
+    _restoreOpenState() {
+      try {
+        chrome.storage.session.get('smPanelOpen', d => {
+          if (d.smPanelOpen) this._open();
+        });
+      } catch {}
+    }
+
+    _listenOutside() {
+      document.addEventListener('click', e => {
+        if (!this.isOpen) return;
+        if (this._panel.contains(e.target) || this._btn.contains(e.target)) return;
+        this._close();
+      }, true);
+    }
+
+    _listenKeyboard() {
+      document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          this._toggle();
+        }
+      });
+    }
+
+    _loadData() {
+      try {
+        chrome.storage.local.get(['actionLog', 'tasks', 'upcomingEvents', 'calendarEvents'], data => {
+          this._refreshStats(data.actionLog || []);
+          this._refreshTasks(data.tasks || []);
+          this._refreshEvents(data.upcomingEvents || data.calendarEvents || []);
+        });
+      } catch {}
+    }
+
+    _refreshStats(log) {
+      const today = new Date().toDateString();
+      const todayLog = log.filter(e => new Date(e.timestamp).toDateString() === today);
+      const emails = todayLog.filter(e => e.type === 'email_drafted' || e.type === 'email_sent').length;
+      const focusMins = todayLog
+        .filter(e => e.type === 'focus_ended')
+        .reduce((sum, e) => sum + (e.duration || 0), 0);
+      const emailsEl = this._panel.querySelector('#sm-fp-stat-emails');
+      const focusEl  = this._panel.querySelector('#sm-fp-stat-focus');
+      if (emailsEl) emailsEl.textContent = emails;
+      if (focusEl)  focusEl.textContent = fmtMins(focusMins);
+    }
+
+    _refreshTasks(tasks) {
+      const list = this._panel.querySelector('#sm-fp-tasks-list');
+      if (!list) return;
+      const items = tasks.filter(t => t.bucket === 'today' && !t.completedAt).slice(0, 3);
+      list.innerHTML = '';
+      if (items.length === 0) {
+        list.innerHTML = `<div style="font-size:12px;color:#6B7280;padding:4px 0;">No tasks for today ✓</div>`;
+        return;
+      }
+      items.forEach(task => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 0;';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.style.cssText = 'accent-color:#7C3AED;width:14px;height:14px;cursor:pointer;flex-shrink:0;';
+        cb.addEventListener('change', () => {
+          try {
+            chrome.runtime.sendMessage({ type: 'UPDATE_TASK', task: { id: task.id, completedAt: Date.now() } }, () => {
+              this._loadData();
+            });
+          } catch {}
+        });
+        const title = document.createElement('span');
+        title.textContent = task.title;
+        title.style.cssText = 'font-size:13px;color:#E2E8F0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        row.appendChild(cb); row.appendChild(title);
+        list.appendChild(row);
+      });
+    }
+
+    _refreshEvents(events) {
+      const list = this._panel.querySelector('#sm-fp-events-list');
+      if (!list) return;
+      const now = Date.now();
+      const upcoming = (events || [])
+        .filter(e => new Date(e.start).getTime() > now)
+        .sort((a, b) => new Date(a.start) - new Date(b.start))
+        .slice(0, 2);
+      list.innerHTML = '';
+      if (upcoming.length === 0) {
+        list.innerHTML = `<div style="font-size:12px;color:#6B7280;padding:4px 0;">No upcoming events</div>`;
+        return;
+      }
+      upcoming.forEach(ev => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#1E293B;border-radius:8px;padding:8px 10px;margin-bottom:5px;';
+        const title = document.createElement('div');
+        title.textContent = ev.title || ev.summary || 'Event';
+        title.style.cssText = 'font-size:13px;font-weight:600;color:#E2E8F0;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        const time = document.createElement('div');
+        time.textContent = fmtTime(ev.start);
+        time.style.cssText = 'font-size:11px;color:#94A3B8;';
+        card.appendChild(title); card.appendChild(time);
+        const link = ev.meetLink || ev.hangoutLink || ev.conferenceData?.entryPoints?.[0]?.uri;
+        if (link) {
+          const joinBtn = document.createElement('button');
+          joinBtn.textContent = '🎥 Join';
+          joinBtn.style.cssText = 'margin-top:6px;background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:4px 11px;font-size:11px;font-weight:600;cursor:pointer;';
+          joinBtn.addEventListener('click', () => window.open(link, '_blank'));
+          card.appendChild(joinBtn);
+        }
+        list.appendChild(card);
+      });
+    }
+
+    _addTask(value) {
+      const title = (value || '').trim();
+      if (!title) return;
+      try {
+        chrome.runtime.sendMessage({ type: 'ADD_TASK', task: { title, bucket: 'today' } }, () => {
+          this._loadData();
+        });
+        const inp = document.getElementById('sm-fp-task-input');
+        if (inp) inp.value = '';
+      } catch {}
+    }
+
+    _initFocusState() {
+      try {
+        chrome.storage.session.get(['focusMode', 'focusEndsAt'], d => {
+          if (d.focusMode) this.setFocusMode(true, d.focusEndsAt);
+        });
+      } catch {}
+    }
+
+    setFocusMode(active, endsAt) {
+      this._focusActive = active;
+      if (active) {
+        this._btn.classList.add('focus-active');
+        this._startCountdown(endsAt);
+      } else {
+        this._btn.classList.remove('focus-active');
+        this._stopCountdown();
+        const focusBtn = this._panel.querySelector('#sm-fp-focus-btn');
+        if (focusBtn) { focusBtn.textContent = 'Start Focus'; focusBtn.classList.remove('stop'); }
+        const cd = this._panel.querySelector('#sm-fp-countdown');
+        if (cd) cd.style.display = 'none';
+        const sec = this._panel.querySelector('#sm-fp-focus-section');
+        if (sec) sec.classList.remove('focus-pulsing');
+      }
+    }
+
+    _startCountdown(endsAt) {
+      const focusBtn = this._panel.querySelector('#sm-fp-focus-btn');
+      const cd       = this._panel.querySelector('#sm-fp-countdown');
+      const sec      = this._panel.querySelector('#sm-fp-focus-section');
+
+      if (focusBtn) { focusBtn.textContent = 'Stop Focus'; focusBtn.classList.add('stop'); }
+      if (cd)  cd.style.display = 'block';
+      if (sec) sec.classList.add('focus-pulsing');
+
+      this._stopCountdown();
+      const tick = () => {
+        const rem = endsAt ? Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)) : 0;
+        const m = Math.floor(rem / 60), s = rem % 60;
+        if (cd) cd.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+        if (rem === 0 && this._countdownInterval) {
+          clearInterval(this._countdownInterval);
+          this._countdownInterval = null;
+        }
+      };
+      tick();
+      this._countdownInterval = setInterval(tick, 1000);
+    }
+
+    _stopCountdown() {
+      if (this._countdownInterval) {
+        clearInterval(this._countdownInterval);
+        this._countdownInterval = null;
+      }
+    }
+
+    updateBadge(count) {
+      if (this._badge) {
+        if (count > 0) {
+          this._badge.textContent = String(count);
+          this._badge.classList.add('visible');
+        } else {
+          this._badge.classList.remove('visible');
+        }
+      }
+      const pb = this._panel ? this._panel.querySelector('#sm-fp-pending-badge') : null;
+      if (pb) {
+        if (count > 0) {
+          pb.textContent = `${count} pending`;
+          pb.style.display = 'inline-block';
+        } else {
+          pb.style.display = 'none';
+        }
+      }
+    }
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  window.slugmindPanel    = new AmbientPanel();
+  window.slugmindFloating = new FloatingWidget(window.slugmindPanel);
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (!window.slugmindPanel) return;
@@ -653,6 +1226,10 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
 
     if (msg.type === 'SHOW_REMINDER') {
       window.slugmindPanel.show({ type: 'reminder', event: msg.event });
+    }
+
+    if (msg.type === 'FOCUS_MODE_CHANGED' && window.slugmindFloating) {
+      window.slugmindFloating.setFocusMode(msg.active, msg.endsAt);
     }
   });
 })();
