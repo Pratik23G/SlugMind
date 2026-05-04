@@ -5,6 +5,7 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
   if (location.protocol === 'chrome:') return;
   if (window.__slugmindLoaded) return;
   window.__slugmindLoaded = true;
+  console.log('[SlugMind] ambient-panel loaded, listening...');
 
   const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif";
 
@@ -736,7 +737,12 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
       const btn = document.createElement('button');
       btn.id = 'sm-float-btn';
       btn.title = 'SlugMind (Ctrl+Shift+S)';
-      btn.textContent = '⊙';
+      const logoCircle = document.createElement('div');
+      logoCircle.style.cssText = 'width:20px;height:20px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+      const logoInner = document.createElement('div');
+      logoInner.style.cssText = 'width:6px;height:6px;border-radius:50%;background:#fff;';
+      logoCircle.appendChild(logoInner);
+      btn.appendChild(logoCircle);
 
       const badge = document.createElement('span');
       badge.id = 'sm-float-badge';
@@ -758,9 +764,11 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
 
       const logo = document.createElement('div');
       logo.className = 'sm-fp-logo';
-      const spiral = document.createElement('span');
-      spiral.textContent = '⊙';
-      spiral.style.cssText = 'font-size:18px;color:#7C3AED;line-height:1;';
+      const spiral = document.createElement('div');
+      spiral.style.cssText = 'width:20px;height:20px;border-radius:50%;border:2px solid #7C3AED;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+      const spiralInner = document.createElement('div');
+      spiralInner.style.cssText = 'width:6px;height:6px;border-radius:50%;background:#7C3AED;';
+      spiral.appendChild(spiralInner);
       const name = document.createElement('span');
       name.textContent = 'SlugMind';
       name.style.cssText = 'font-weight:700;color:#fff;font-size:14px;';
@@ -1095,7 +1103,7 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
         const link = ev.meetLink || ev.hangoutLink || ev.conferenceData?.entryPoints?.[0]?.uri;
         if (link) {
           const joinBtn = document.createElement('button');
-          joinBtn.textContent = '🎥 Join';
+          joinBtn.textContent = 'Join';
           joinBtn.style.cssText = 'margin-top:6px;background:#7C3AED;color:#fff;border:none;border-radius:6px;padding:4px 11px;font-size:11px;font-weight:600;cursor:pointer;';
           joinBtn.addEventListener('click', () => window.open(link, '_blank'));
           card.appendChild(joinBtn);
@@ -1196,40 +1204,54 @@ console.log('[SlugMind] ambient-panel.js injected successfully');
   window.slugmindPanel    = new AmbientPanel();
   window.slugmindFloating = new FloatingWidget(window.slugmindPanel);
 
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (!window.slugmindPanel) return;
+  function showEmailAlert(msg) {
+    window.slugmindPanel.show({
+      type:      'email',
+      emailId:   msg.emailId,
+      messageId: msg.messageId,
+      threadId:  msg.threadId,
+      from:      msg.from,
+      subject:   msg.subject,
+      preview:   msg.preview,
+      draft:     msg.draft,
+      to:        msg.to,
+    });
+  }
 
-    if (msg.type === 'SHOW_EMAIL_ALERT') {
-      window.slugmindPanel.show({
-        type:      'email',
-        emailId:   msg.emailId,
-        messageId: msg.messageId,
-        threadId:  msg.threadId,
-        from:      msg.from,
-        subject:   msg.subject,
-        preview:   msg.preview,
-        draft:     msg.draft,
-        to:        msg.to,
-      });
-    }
+  function showConflictAlert(msg) {
+    window.slugmindPanel.show({
+      type:         'conflict',
+      conflictType: msg.conflictType,
+      event1:       msg.event1 || msg.eventA,
+      event2:       msg.event2 || msg.eventB,
+      alternatives: msg.alternatives || [],
+      attendees:    msg.attendees || [],
+    });
+  }
 
-    if (msg.type === 'SHOW_CONFLICT_ALERT') {
-      window.slugmindPanel.show({
-        type:         'conflict',
-        conflictType: msg.conflictType,
-        event1:       msg.event1,
-        event2:       msg.event2,
-        alternatives: msg.alternatives || [],
-        attendees:    msg.attendees || [],
-      });
-    }
+  function showReminder(msg) {
+    window.slugmindPanel.show({
+      type:  'reminder',
+      event: {
+        id:       msg.eventId   || msg.event?.id,
+        title:    msg.title     || msg.event?.title,
+        meetLink: msg.meetLink  || msg.event?.meetLink,
+        start:    msg.event?.start,
+      },
+    });
+  }
 
-    if (msg.type === 'SHOW_REMINDER') {
-      window.slugmindPanel.show({ type: 'reminder', event: msg.event });
-    }
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    console.log('[SlugMind] message received:', msg.type);
+    if (!window.slugmindPanel) { sendResponse({ success: false }); return true; }
 
+    if (msg.type === 'SHOW_EMAIL_ALERT')    { showEmailAlert(msg);   sendResponse({ success: true }); }
+    if (msg.type === 'SHOW_CONFLICT_ALERT') { showConflictAlert(msg); sendResponse({ success: true }); }
+    if (msg.type === 'SHOW_REMINDER')       { showReminder(msg);      sendResponse({ success: true }); }
     if (msg.type === 'FOCUS_MODE_CHANGED' && window.slugmindFloating) {
       window.slugmindFloating.setFocusMode(msg.active, msg.endsAt);
+      sendResponse({ success: true });
     }
+    return true;
   });
 })();
